@@ -3,7 +3,7 @@ import uuid
 import uvicorn
 import yt_dlp
 import subprocess
-import requests # 👑 المكتبة السحرية لحل مشكلة التيك توك (0 بايت)
+import requests 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
@@ -11,12 +11,13 @@ from fastapi.templating import Jinja2Templates
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
+# 👑 تم إزالة السطر المسبب للمشكلة في الويندوز واستخدام بديل آمن 100%
 YDL_OPTS = {
     'quiet': True,
     'no_warnings': True,
     'no_check_certificate': True,
     'extract_flat': False,
-    'source_address': '0.0.0.0',
+    'force_ipv4': True, # هذا الخيار آمن على جهازك وعلى سيرفر Railway
 }
 
 @app.get("/", response_class=HTMLResponse)
@@ -37,7 +38,6 @@ async def analyze_video(data: dict):
             if not formats:
                 video_formats.append({"id": "best", "res_val": 1080, "label": "أفضل جودة متاحة", "type": "video", "size": "MAX"})
             else:
-                # 👑 حل مشكلة التيك توك (إظهار الجودات بالعلامة وبدون)
                 if 'tiktok' in extractor:
                     tiktok_added = set()
                     for f in formats:
@@ -50,15 +50,19 @@ async def analyze_video(data: dict):
                         
                         if label not in tiktok_added:
                             tiktok_added.add(label)
+                            
+                            # تأمين حساب الحجم حتى لو كان مخفياً
+                            size = f.get('filesize') or f.get('filesize_approx')
+                            size_str = f"{round(size/1024/1024, 1)} MB" if size else "MAX"
+                            
                             video_formats.append({
                                 "id": f.get('format_id'),
                                 "res_val": 720 if is_watermark else 1080,
                                 "label": label,
                                 "type": "video",
-                                "size": f"{round(f['filesize']/1024/1024, 1)} MB" if f.get('filesize') else "MAX"
+                                "size": size_str
                             })
                 else:
-                    # 👑 حل مشكلة اليوتيوب (إظهار كل الجودات بدون حذف)
                     added_res = set()
                     for f in reversed(formats):
                         vcodec = f.get('vcodec')
@@ -74,12 +78,15 @@ async def analyze_video(data: dict):
                                 elif height >= 720: tag = "HD"
                                 else: tag = "SD"
                                 
+                                size = f.get('filesize') or f.get('filesize_approx')
+                                size_str = f"{round(size/1024/1024, 1)} MB" if size else "MAX"
+                                
                                 video_formats.append({
                                     "id": f.get('format_id'),
                                     "res_val": height,
                                     "label": f"{height}P {tag}",
                                     "type": "video",
-                                    "size": f"{round(f['filesize']/1024/1024, 1)} MB" if f.get('filesize') else "MAX"
+                                    "size": size_str
                                 })
             
             video_formats.sort(key=lambda x: x['res_val'], reverse=True)
@@ -90,18 +97,18 @@ async def analyze_video(data: dict):
             
             return {"success": True, "title": title, "thumbnail": thumbnail, "formats": final_list}
     except Exception as e:
+        # طباعة الخطأ في السيرفر لتسهيل اكتشافه لو حصل مرة تانية
+        print(f"Error extracting info: {str(e)}")
         return {"success": False, "error": str(e)}
 
 @app.get("/download")
 async def download(url: str, format_id: str, is_audio: bool = False, res: int = 0):
     def stream_data():
-        with yt_dlp.YoutubeDL({'quiet': True, 'no_warnings': True}) as ydl:
+        with yt_dlp.YoutubeDL({'quiet': True, 'no_warnings': True, 'force_ipv4': True}) as ydl:
             info = ydl.extract_info(url, download=False)
             extractor = info.get('extractor', '').lower()
             
-            # 👑 المعالجة السحرية: فصل اليوتيوب عن التيك توك في التحميل
             if 'youtube' in extractor and not is_audio:
-                # يوتيوب بيحتاج FFmpeg للدمج
                 target_format = 'bestvideo+bestaudio[ext=m4a]/bestvideo+bestaudio/best' if format_id == 'best' else f'{format_id}+bestaudio[ext=m4a]/bestaudio/best'
                 info = ydl.extract_info(url, download=False)
                 ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -126,18 +133,16 @@ async def download(url: str, format_id: str, is_audio: bool = False, res: int = 
                     yield chunk
 
             else:
-                # 👑 التيك توك وباقي المواقع (تحميل بـ Requests عشان نمنع الـ 0 بايت)
+                # محرك التيك توك الخالي من الـ 0 بايت
                 headers = info.get('http_headers', {})
                 media_url = info['url']
                 
-                # البحث عن الرابط الدقيق للجودة المطلوبة
                 if format_id != 'best' and not is_audio:
                     for f in info.get('formats', []):
                         if f.get('format_id') == format_id:
                             media_url = f.get('url')
                             break
 
-                # عمل اتصال مباشر وتمرير البيانات فوراً للمتصفح
                 r = requests.get(media_url, headers=headers, stream=True)
                 for chunk in r.iter_content(chunk_size=1024 * 256):
                     if chunk: 
@@ -152,4 +157,4 @@ async def download(url: str, format_id: str, is_audio: bool = False, res: int = 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
