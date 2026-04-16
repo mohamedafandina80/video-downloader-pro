@@ -163,4 +163,7 @@ async def download(url: str, format_id: str, is_audio: bool = False, res: int = 
     })
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=5000, reload=True)
+    # السيرفر يبحث عن متغير بيئة يسمى "PORT"، وإذا لم يجده يستخدم 5000 كافتراضي (للجهاز المحلي)
+    port = int(os.environ.get("PORT", 5000))
+    # نستخدم 0.0.0.0 لضمان وصول الطلبات الخارجية للسيرفر
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
