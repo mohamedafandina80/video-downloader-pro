@@ -3,6 +3,7 @@ import uuid
 import uvicorn
 import yt_dlp
 import subprocess
+import requests # 👑 المكتبة السحرية لحل مشكلة التيك توك (0 بايت)
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
@@ -10,16 +11,12 @@ from fastapi.templating import Jinja2Templates
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-# 👑 إعدادات تخطي حماية السيرفرات السحابية (يوتيوب وتيك توك)
 YDL_OPTS = {
     'quiet': True,
     'no_warnings': True,
     'no_check_certificate': True,
     'extract_flat': False,
-    'source_address': '0.0.0.0', # إجبار استخدام IPv4 عشان يوتيوب ميعملش بلوك
-    'extractor_args': {
-        'youtube': {'player_client': ['android', 'ios']} # التخفي كأنه تطبيق موبايل
-    }
+    'source_address': '0.0.0.0',
 }
 
 @app.get("/", response_class=HTMLResponse)
@@ -33,46 +30,57 @@ async def analyze_video(data: dict):
         with yt_dlp.YoutubeDL(YDL_OPTS) as ydl:
             info = ydl.extract_info(url, download=False)
             video_formats = []
-            added_res = set()
             
             formats = info.get('formats', [])
+            extractor = info.get('extractor', '').lower()
             
             if not formats:
-                video_formats.append({
-                    "id": "best",
-                    "res_val": 1080,
-                    "label": "أفضل جودة متاحة (Live)",
-                    "type": "video",
-                    "size": "MAX"
-                })
+                video_formats.append({"id": "best", "res_val": 1080, "label": "أفضل جودة متاحة", "type": "video", "size": "MAX"})
             else:
-                for f in reversed(formats):
-                    ext = f.get('ext', '')
-                    protocol = f.get('protocol', '')
-                    vcodec = f.get('vcodec', '')
-                    
-                    if vcodec != 'none' or 'm3u8' in protocol or ext in ['mp4', 'mkv', 'flv']:
-                        res = f.get('height') or 0
+                # 👑 حل مشكلة التيك توك (إظهار الجودات بالعلامة وبدون)
+                if 'tiktok' in extractor:
+                    tiktok_added = set()
+                    for f in formats:
+                        vcodec = f.get('vcodec')
+                        if vcodec == 'none' or 'images' in f.get('format_id', ''): 
+                            continue
+                            
+                        is_watermark = 'watermark' in f.get('format_id', '').lower() or 'watermark' in f.get('format_note', '').lower()
+                        label = "بعلامة مائية (Watermarked)" if is_watermark else "بدون علامة مائية (No Watermark)"
                         
-                        if res not in added_res or res == 0:
-                            if res >= 2160: tag = "4K ULTRA HD"
-                            elif res >= 1440: tag = "2K QHD"
-                            elif res >= 1080: tag = "FULL HD"
-                            elif res >= 720: tag = "HD"
-                            elif res > 0: tag = "SD"
-                            else: tag = "جودة سينمائية مخصصة"
-                            
-                            label = f"{res}P {tag}" if res > 0 else f"{tag} ({ext.upper()})"
-                            
+                        if label not in tiktok_added:
+                            tiktok_added.add(label)
                             video_formats.append({
-                                "id": f.get('format_id', 'best'),
-                                "res_val": res,
+                                "id": f.get('format_id'),
+                                "res_val": 720 if is_watermark else 1080,
                                 "label": label,
                                 "type": "video",
                                 "size": f"{round(f['filesize']/1024/1024, 1)} MB" if f.get('filesize') else "MAX"
                             })
-                            if res > 0:
-                                added_res.add(res)
+                else:
+                    # 👑 حل مشكلة اليوتيوب (إظهار كل الجودات بدون حذف)
+                    added_res = set()
+                    for f in reversed(formats):
+                        vcodec = f.get('vcodec')
+                        height = f.get('height')
+                        
+                        if vcodec != 'none' and height and height >= 144:
+                            if height not in added_res:
+                                added_res.add(height)
+                                
+                                if height >= 2160: tag = "4K ULTRA HD"
+                                elif height >= 1440: tag = "2K QHD"
+                                elif height >= 1080: tag = "FULL HD"
+                                elif height >= 720: tag = "HD"
+                                else: tag = "SD"
+                                
+                                video_formats.append({
+                                    "id": f.get('format_id'),
+                                    "res_val": height,
+                                    "label": f"{height}P {tag}",
+                                    "type": "video",
+                                    "size": f"{round(f['filesize']/1024/1024, 1)} MB" if f.get('filesize') else "MAX"
+                                })
             
             video_formats.sort(key=lambda x: x['res_val'], reverse=True)
             final_list = [{"id": "bestaudio", "label": "MP3 AUDIO - جودة خرافية", "type": "audio", "size": "HQ"}] + video_formats
@@ -87,77 +95,53 @@ async def analyze_video(data: dict):
 @app.get("/download")
 async def download(url: str, format_id: str, is_audio: bool = False, res: int = 0):
     def stream_data():
-        if is_audio:
-            target_format = 'bestaudio/best'
-        elif format_id == 'best':
-            target_format = 'bestvideo+bestaudio[ext=m4a]/bestvideo+bestaudio/best'
-        else:
-            target_format = f'{format_id}+bestaudio[ext=m4a]/bestaudio/best'
-
-        ydl_opts = {
-            'quiet': True, 'no_warnings': True, 'no_check_certificate': True, 
-            'format': target_format,
-            'source_address': '0.0.0.0',
-            'extractor_args': {'youtube': {'player_client': ['android', 'ios']}}
-        }
-        
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with yt_dlp.YoutubeDL({'quiet': True, 'no_warnings': True}) as ydl:
             info = ydl.extract_info(url, download=False)
+            extractor = info.get('extractor', '').lower()
             
-            # 👑 سحب بصمات تيك توك السرية وتجهيزها لـ FFmpeg
-            headers_str = ""
-            if 'http_headers' in info:
-                for k, v in info['http_headers'].items():
-                    headers_str += f"{k}: {v}\r\n"
-            
-            header_args = ['-headers', headers_str] if headers_str else []
+            # 👑 المعالجة السحرية: فصل اليوتيوب عن التيك توك في التحميل
+            if 'youtube' in extractor and not is_audio:
+                # يوتيوب بيحتاج FFmpeg للدمج
+                target_format = 'bestvideo+bestaudio[ext=m4a]/bestvideo+bestaudio/best' if format_id == 'best' else f'{format_id}+bestaudio[ext=m4a]/bestaudio/best'
+                info = ydl.extract_info(url, download=False)
+                ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                
+                if 'requested_formats' in info:
+                    v_url = info['requested_formats'][0]['url']
+                    a_url = info['requested_formats'][1]['url']
+                    a_codec = 'copy' if info['requested_formats'][1]['ext'] == 'm4a' else 'aac'
+                    
+                    command = [
+                        'ffmpeg', '-user_agent', ua, '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5', '-thread_queue_size', '10000', '-i', v_url,
+                        '-user_agent', ua, '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5', '-thread_queue_size', '10000', '-i', a_url,
+                        '-c:v', 'copy', '-c:a', a_codec, '-f', 'mp4', '-movflags', 'frag_keyframe+empty_moov', '-threads', '0', 'pipe:1'
+                    ]
+                else:
+                    command = ['ffmpeg', '-user_agent', ua, '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5', '-i', info['url'], '-c', 'copy', '-f', 'mp4', '-movflags', 'frag_keyframe+empty_moov', '-threads', '0', 'pipe:1']
+                
+                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                while True:
+                    chunk = process.stdout.read(1024 * 256)
+                    if not chunk: break
+                    yield chunk
 
-            if is_audio:
-                media_url = info['url']
-                command = ['ffmpeg'] + header_args + [
-                    '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
-                    '-i', media_url, '-c:a', 'libmp3lame', '-f', 'mp3', 'pipe:1'
-                ]
-                
-            elif 'requested_formats' in info:
-                video_url = info['requested_formats'][0]['url']
-                audio_url = info['requested_formats'][1]['url']
-                audio_ext = info['requested_formats'][1]['ext']
-                
-                a_codec = 'copy' if audio_ext == 'm4a' else 'aac'
-                
-                command = ['ffmpeg'] + header_args + [
-                    '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
-                    '-i', video_url
-                ] + header_args + [
-                    '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
-                    '-i', audio_url,
-                    '-c:v', 'copy',
-                    '-c:a', a_codec,
-                    '-f', 'mp4',
-                    '-movflags', 'frag_keyframe+empty_moov',
-                    '-threads', '0',
-                    'pipe:1'
-                ]
             else:
+                # 👑 التيك توك وباقي المواقع (تحميل بـ Requests عشان نمنع الـ 0 بايت)
+                headers = info.get('http_headers', {})
                 media_url = info['url']
-                command = ['ffmpeg'] + header_args + [
-                    '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
-                    '-i', media_url,
-                    '-c', 'copy',
-                    '-f', 'mp4',
-                    '-movflags', 'frag_keyframe+empty_moov',
-                    '-threads', '0',
-                    'pipe:1'
-                ]
+                
+                # البحث عن الرابط الدقيق للجودة المطلوبة
+                if format_id != 'best' and not is_audio:
+                    for f in info.get('formats', []):
+                        if f.get('format_id') == format_id:
+                            media_url = f.get('url')
+                            break
 
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        
-        while True:
-            chunk = process.stdout.read(1024 * 256)
-            if not chunk:
-                break
-            yield chunk
+                # عمل اتصال مباشر وتمرير البيانات فوراً للمتصفح
+                r = requests.get(media_url, headers=headers, stream=True)
+                for chunk in r.iter_content(chunk_size=1024 * 256):
+                    if chunk: 
+                        yield chunk
 
     name = f"U2_DOWNLOADER_{uuid.uuid4().hex[:4]}"
     name += ".mp3" if is_audio else ".mp4"
