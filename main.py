@@ -10,11 +10,16 @@ from fastapi.templating import Jinja2Templates
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
+# 👑 إعدادات تخطي حماية السيرفرات السحابية (يوتيوب وتيك توك)
 YDL_OPTS = {
     'quiet': True,
     'no_warnings': True,
     'no_check_certificate': True,
     'extract_flat': False,
+    'source_address': '0.0.0.0', # إجبار استخدام IPv4 عشان يوتيوب ميعملش بلوك
+    'extractor_args': {
+        'youtube': {'player_client': ['android', 'ios']} # التخفي كأنه تطبيق موبايل
+    }
 }
 
 @app.get("/", response_class=HTMLResponse)
@@ -89,21 +94,27 @@ async def download(url: str, format_id: str, is_audio: bool = False, res: int = 
         else:
             target_format = f'{format_id}+bestaudio[ext=m4a]/bestaudio/best'
 
-        ydl_opts = {'quiet': True, 'no_warnings': True, 'no_check_certificate': True, 'format': target_format}
+        ydl_opts = {
+            'quiet': True, 'no_warnings': True, 'no_check_certificate': True, 
+            'format': target_format,
+            'source_address': '0.0.0.0',
+            'extractor_args': {'youtube': {'player_client': ['android', 'ios']}}
+        }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             
-            # 👑 خدعة التخفي: جلب متصفح وهمي لكسر خنق يوتيوب للسرعة
-            ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            # 👑 سحب بصمات تيك توك السرية وتجهيزها لـ FFmpeg
+            headers_str = ""
             if 'http_headers' in info:
-                ua = info['http_headers'].get('User-Agent', ua)
+                for k, v in info['http_headers'].items():
+                    headers_str += f"{k}: {v}\r\n"
             
+            header_args = ['-headers', headers_str] if headers_str else []
+
             if is_audio:
                 media_url = info['url']
-                command = [
-                    'ffmpeg', 
-                    '-user_agent', ua, # تفعيل التخفي
+                command = ['ffmpeg'] + header_args + [
                     '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
                     '-i', media_url, '-c:a', 'libmp3lame', '-f', 'mp3', 'pipe:1'
                 ]
@@ -115,15 +126,11 @@ async def download(url: str, format_id: str, is_audio: bool = False, res: int = 
                 
                 a_codec = 'copy' if audio_ext == 'm4a' else 'aac'
                 
-                command = [
-                    'ffmpeg',
-                    '-user_agent', ua, # تفعيل التخفي للفيديو
+                command = ['ffmpeg'] + header_args + [
                     '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
-                    '-thread_queue_size', '10000',
-                    '-i', video_url,
-                    '-user_agent', ua, # تفعيل التخفي للصوت
+                    '-i', video_url
+                ] + header_args + [
                     '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
-                    '-thread_queue_size', '10000',
                     '-i', audio_url,
                     '-c:v', 'copy',
                     '-c:a', a_codec,
@@ -134,9 +141,7 @@ async def download(url: str, format_id: str, is_audio: bool = False, res: int = 
                 ]
             else:
                 media_url = info['url']
-                command = [
-                    'ffmpeg',
-                    '-user_agent', ua, # تفعيل التخفي
+                command = ['ffmpeg'] + header_args + [
                     '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
                     '-i', media_url,
                     '-c', 'copy',
@@ -149,7 +154,6 @@ async def download(url: str, format_id: str, is_audio: bool = False, res: int = 
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         
         while True:
-            # 👑 تصغير الحزمة لـ 256 كيلوبايت عشان العداد يتحرك بنعومة وبدون توقف
             chunk = process.stdout.read(1024 * 256)
             if not chunk:
                 break
@@ -163,7 +167,5 @@ async def download(url: str, format_id: str, is_audio: bool = False, res: int = 
     })
 
 if __name__ == "__main__":
-    # السيرفر يبحث عن متغير بيئة يسمى "PORT"، وإذا لم يجده يستخدم 5000 كافتراضي (للجهاز المحلي)
-    port = int(os.environ.get("PORT", 5000))
-    # نستخدم 0.0.0.0 لضمان وصول الطلبات الخارجية للسيرفر
+    port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
