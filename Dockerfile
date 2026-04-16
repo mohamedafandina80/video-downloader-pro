@@ -9,7 +9,7 @@ WORKDIR /app
 
 # نسخ ملف المكتبات وتسطيبها
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -U -r requirements.txt yt-dlp
 
 # نسخ باقي ملفات المشروع (main.py ومجلد templates)
 COPY . .
