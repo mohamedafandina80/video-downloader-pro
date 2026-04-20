@@ -106,7 +106,13 @@ async def get_subs(data: dict):
 @app.post("/tools/subs/upload")
 async def upload_subs(file: UploadFile = File(...)):
     path = f"up_{uuid.uuid4().hex[:5]}_{file.filename}"
-    GROQ_API_KEY = "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"
+    import os
+
+# السطر ده بيخلي السيرفر يدور على المفتاح في الإعدادات السرية
+GROQ_API_KEY = os.getenv("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")
+
+# تأكد كمان إنك ضفت السطر ده في أول الملف عشان الـ FFmpeg يشتغل على Render
+os.environ["PATH"] += os.pathsep + os.path.join(os.getcwd(), "ffmpeg")
     try:
         from groq import Groq
         with open(path, "wb") as b: shutil.copyfileobj(file.file, b)
