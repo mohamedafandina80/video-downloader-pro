@@ -14,16 +14,16 @@ from fastapi.templating import Jinja2Templates
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-# 1. تفعيل مسار FFmpeg المحمل في عملية الـ Build على Render
+# 1. تفعيل مسار FFmpeg المحمل في Render
 os.environ["PATH"] += os.pathsep + os.path.join(os.getcwd(), "ffmpeg")
 
-# 2. إعدادات ملف الكوكيز (تأكد من رفع ملف باسم cookies.txt مع الكود)
+# 2. ملف الكوكيز (تأكد من رفعه مع المشروع)
 COOKIES_FILE = "cookies.txt"
 
-# 3. جلب مفتاح Groq من إعدادات البيئة في Render
+# 3. مفتاح Groq من إعدادات البيئة
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# خيارات yt-dlp الأساسية للتحليل
+# خيارات yt-dlp للتحليل
 YDL_OPTS = {
     'quiet': True, 
     'no_warnings': True, 
@@ -35,7 +35,6 @@ YDL_OPTS = {
     }
 }
 
-# تأسيس قاعدة البيانات (SQLite تعمل بشكل مؤقت على Render)
 def init_db():
     conn = sqlite3.connect("u2_pro_database.db")
     cursor = conn.cursor()
@@ -50,33 +49,6 @@ init_db()
 async def home(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
-# --- نظام تسجيل الدخول ---
-@app.post("/api/register")
-async def register(data: dict):
-    user, pw, avatar = data.get("username"), data.get("password"), data.get("avatar", "")
-    hashed_pw = hashlib.sha256(pw.encode()).hexdigest()
-    conn = sqlite3.connect("u2_pro_database.db")
-    cur = conn.cursor()
-    try:
-        cur.execute("INSERT INTO users (username, password, avatar) VALUES (?, ?, ?)", (user, hashed_pw, avatar))
-        conn.commit()
-        return {"success": True}
-    except: return {"success": False, "error": "المستخدم موجود بالفعل"}
-    finally: conn.close()
-
-@app.post("/api/login")
-async def login(data: dict):
-    user, pw = data.get("username"), data.get("password")
-    hashed_pw = hashlib.sha256(pw.encode()).hexdigest()
-    conn = sqlite3.connect("u2_pro_database.db")
-    cur = conn.cursor()
-    cur.execute("SELECT avatar FROM users WHERE username=? AND password=?", (user, hashed_pw))
-    row = cur.fetchone()
-    conn.close()
-    if row: return {"success": True, "avatar": row[0], "username": user}
-    return {"success": False}
-
-# --- تحليل الفيديو ---
 @app.post("/analyze")
 async def analyze_video(data: dict):
     try:
@@ -92,21 +64,21 @@ async def analyze_video(data: dict):
                         "size": f"{round(f['filesize']/1024/1024, 1)} MB" if f.get('filesize') else "HQ"
                     })
             return {"success": True, "title": info.get('title'), "thumbnail": info.get('thumbnail'), "formats": formats[:6]}
-    except Exception as e:
-        print(f"Error: {e}")
+    except:
         return {"success": False}
 
-# --- تحميل الفيديو (النسخة المرنة) ---
 @app.get("/download")
 async def download(url: str, format_id: str, is_audio: str = "false"):
     is_audio_bool = is_audio.lower() == 'true'
     
     def stream():
-        # استخدام أفضل جودة متاحة كبديل في حالة فشل الـ format_id المحدد
+        # تعديل جوهري لضمان التحميل حتى لو الصيغة غير متوفرة
         if is_audio_bool:
+            # طلب أفضل صوت
             cmd = ['yt-dlp', '--no-check-certificate', '-f', 'bestaudio/best', '-o', '-']
         else:
-            # {format_id}+bestaudio/best/best تعني: جرب المختار، ثم أفضل دمج، ثم أفضل فيديو متاح
+            # طلب المعرف المحدد، وإذا فشل يتم اختيار أفضل دمج متاح تلقائياً
+            # f'{format_id}+bestaudio/best/best' هي السطر السحري لحل المشكلة
             cmd = ['yt-dlp', '--no-check-certificate', '-f', f'{format_id}+bestaudio/best/best', '-o', '-']
         
         if os.path.exists(COOKIES_FILE):
@@ -123,7 +95,7 @@ async def download(url: str, format_id: str, is_audio: str = "false"):
 
     return StreamingResponse(stream(), media_type="application/octet-stream")
 
-# --- أدوات الذكاء الاصطناعي (نصوص) ---
+# --- محرك الذكاء الاصطناعي ---
 def process_to_json(transcription):
     segments = getattr(transcription, 'segments', []) if not isinstance(transcription, dict) else transcription.get('segments', [])
     return [{"start": round(s.get('start', 0), 2), "text": s.get('text', '').strip()} for s in segments]
@@ -136,15 +108,12 @@ async def get_subs(data: dict):
         from groq import Groq
         opts = {'format':'bestaudio/best','outtmpl':f'{base}.%(ext)s','quiet':True}
         if os.path.exists(COOKIES_FILE): opts['cookiefile'] = COOKIES_FILE
-        
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=True)
             file_path = f"{base}.{info['ext']}"
-            
         client = Groq(api_key=GROQ_API_KEY)
         with open(file_path, "rb") as f:
             ts = client.audio.transcriptions.create(file=(file_path, f.read()), model="whisper-large-v3", response_format="verbose_json")
-        
         if os.path.exists(file_path): os.remove(file_path)
         return {"success": True, "data": process_to_json(ts)}
     except Exception as e:
@@ -165,7 +134,6 @@ async def upload_subs(file: UploadFile = File(...)):
         if os.path.exists(path): os.remove(path)
         return {"success": False, "error": str(e)}
 
-# تشغيل البورت الديناميكي الخاص بـ Render
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     uvicorn.run(app, host="0.0.0.0", port=port)
