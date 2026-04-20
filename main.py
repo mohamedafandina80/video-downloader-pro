@@ -30,11 +30,20 @@ def init_db():
 
 init_db()
 
+# أضف مسار ملف الكوكيز
+COOKIES_PATH = "cookies.txt"
+
 YDL_OPTS = {
-    'quiet': True, 'no_warnings': True, 'no_check_certificate': True,
+    'quiet': True, 
+    'no_warnings': True, 
+    'no_check_certificate': True,
     'format': 'bestvideo+bestaudio/best',
-    'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+    'cookiefile': COOKIES_PATH,  # السطر السحري هنا
+    'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
 }
+
+# وتأكد من تعديل أمر subprocess في دالة download ليكون:
+# cmd = ['yt-dlp', '--cookies', COOKIES_PATH, '--no-check-certificate', ...]
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
