@@ -14,7 +14,12 @@ from fastapi.templating import Jinja2Templates
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-# 👑 تأسيس قاعدة بيانات الإمبراطور
+# تأكد من أن السيرفر يرى مجلد ffmpeg الذي قمنا بتحميله
+os.environ["PATH"] += os.pathsep + os.path.join(os.getcwd(), "ffmpeg")
+
+# مفتاح Groq من إعدادات السيرفر (Environment Variables)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
 def init_db():
     conn = sqlite3.connect("u2_pro_database.db")
     cursor = conn.cursor()
@@ -35,7 +40,6 @@ YDL_OPTS = {
 async def home(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
-# 🔐 نظام الحسابات VIP
 @app.post("/api/register")
 async def register(data: dict):
     user, pw, avatar = data.get("username"), data.get("password"), data.get("avatar", "")
@@ -61,7 +65,6 @@ async def login(data: dict):
     if row: return {"success": True, "avatar": row[0], "username": user}
     return {"success": False}
 
-# 🚀 محرك التحليل والتحميل
 @app.post("/analyze")
 async def analyze_video(data: dict):
     try:
@@ -81,7 +84,6 @@ async def download(url: str, format_id: str, is_audio: str = "false"):
         while chunk := p.stdout.read(1024*512): yield chunk
     return StreamingResponse(stream())
 
-# 🧠 استوديو التفريغ (يوتيوب + ملفات الجهاز)
 def process_to_json(transcription):
     segments = getattr(transcription, 'segments', []) if not isinstance(transcription, dict) else transcription.get('segments', [])
     return [{"start": round(s.get('start', 0), 2), "text": s.get('text', '').strip()} for s in segments]
@@ -90,7 +92,6 @@ def process_to_json(transcription):
 async def get_subs(data: dict):
     url = data.get("url")
     base = f"tmp_{uuid.uuid4().hex[:5]}"
-    GROQ_API_KEY = "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" # تأكد من تحديث المفتاح
     try:
         from groq import Groq
         with yt_dlp.YoutubeDL({'format':'bestaudio/best','outtmpl':f'{base}.%(ext)s','quiet':True}) as ydl:
@@ -99,32 +100,25 @@ async def get_subs(data: dict):
         client = Groq(api_key=GROQ_API_KEY)
         with open(file_path, "rb") as f:
             ts = client.audio.transcriptions.create(file=(file_path, f.read()), model="whisper-large-v3", response_format="verbose_json")
-        os.remove(file_path)
+        if os.path.exists(file_path): os.remove(file_path)
         return {"success": True, "data": process_to_json(ts)}
     except Exception as e: return {"success": False, "error": str(e)}
 
 @app.post("/tools/subs/upload")
 async def upload_subs(file: UploadFile = File(...)):
     path = f"up_{uuid.uuid4().hex[:5]}_{file.filename}"
-    import os
-
-# السطر ده بيخلي السيرفر يدور على المفتاح في الإعدادات السرية
-GROQ_API_KEY = os.getenv("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")
-
-# تأكد كمان إنك ضفت السطر ده في أول الملف عشان الـ FFmpeg يشتغل على Render
-os.environ["PATH"] += os.pathsep + os.path.join(os.getcwd(), "ffmpeg")
     try:
         from groq import Groq
         with open(path, "wb") as b: shutil.copyfileobj(file.file, b)
         client = Groq(api_key=GROQ_API_KEY)
         with open(path, "rb") as f:
             ts = client.audio.transcriptions.create(file=(path, f.read()), model="whisper-large-v3", response_format="verbose_json")
-        os.remove(path)
+        if os.path.exists(path): os.remove(path)
         return {"success": True, "data": process_to_json(ts)}
-    except Exception as e: return {"success": False, "error": str(e)}
+    except Exception as e: 
+        if os.path.exists(path): os.remove(path)
+        return {"success": False, "error": str(e)}
 
 if __name__ == "__main__":
-    import uvicorn
-    #Render بيحتاج يقرأ البورت من البيئة المحيطة
-    port = int(os.environ.get("PORT", 5000)) 
+    port = int(os.environ.get("PORT", 5000))
     uvicorn.run(app, host="0.0.0.0", port=port)
