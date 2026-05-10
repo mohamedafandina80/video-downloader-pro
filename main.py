@@ -442,5 +442,5 @@ async def ai_dubber(request: Request, background_tasks: BackgroundTasks):
         return JSONResponse({"success": False, "error": str(e)})
     
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 1000))
     uvicorn.run(app, host="0.0.0.0", port=port)
