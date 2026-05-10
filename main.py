@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request, File, UploadFile, BackgroundTasks, Form
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from groq import Groq
+import edge_tts
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -18,12 +19,14 @@ templates = Jinja2Templates(directory="templates")
 # 🔑 منطقة المفاتيح السحابية
 # ==========================================
 GROQ_API_KEY = "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"
-COOKIES_FILE = "cookies.txt"
 
+# التعديل السحري: الكود هيقرا من خزنة Render السحابية، ولو إنت شغال على جهازك هيقرا من الملف العادي
+COOKIES_FILE = "/etc/secrets/cookies.txt" if os.path.exists("/etc/secrets/cookies.txt") else "cookies.txt"
 
 YDL_OPTS = {
     'quiet': True, 'no_warnings': True, 'no_check_certificate': True,
     'format': 'bestvideo+bestaudio/best',
+    'merge_output_format': 'mp4',
     'cookiefile': COOKIES_FILE if os.path.exists(COOKIES_FILE) else None,
     'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 }
@@ -102,7 +105,7 @@ async def remove_silence_url(request: Request, background_tasks: BackgroundTasks
     in_file = None; out_file = f"out_{base}.mp4"
     try:
         opts = {
-            'format': 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+            'format': 'bestvideo[height<=720]+bestaudio/best',
             'merge_output_format': 'mp4',
             'outtmpl': f'{base}.%(ext)s', 
             'quiet': True
@@ -126,19 +129,14 @@ async def remove_silence_url(request: Request, background_tasks: BackgroundTasks
 # ⚡ المحرك العالمي للتفريغ الصوتي (Whisper-Large-V3)
 # ==========================================
 def transcribe_with_ai(file_path):
-    """
-    هنا التعديل السحري: استخراج الصوت فقط وضغطه لحجم صغير جداً
-    لمنع الـ Timeout وتسريع الرفع للذكاء الاصطناعي أضعاف مضاعفة!
-    """
     compressed_audio = f"tmp_audio_ai_{uuid.uuid4().hex[:5]}.mp3"
     try:
-        # استخراج الصوت بضغط 64k (يقلل حجم الـ 100 ميجا لـ 1 ميجا فقط!)
         subprocess.run(['ffmpeg', '-y', '-i', file_path, '-vn', '-c:a', 'libmp3lame', '-b:a', '64k', compressed_audio], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
         
         client = Groq(api_key=GROQ_API_KEY)
         with open(compressed_audio, "rb") as f:
             ts = client.audio.transcriptions.create(
-                file=("audio.mp3", f.read()), # نخدع API ونقوله ده ملف صوتي صغير
+                file=("audio.mp3", f.read()),
                 model="whisper-large-v3", 
                 response_format="verbose_json"
             )
@@ -209,11 +207,16 @@ async def process_auto_sub(in_file, target_lang, action, background_tasks, out_n
 async def autosub_url(request: Request, background_tasks: BackgroundTasks):
     data = await request.json(); base = f"tmp_{uuid.uuid4().hex[:5]}"; in_file = None
     try:
-        opts = {'format': 'bestvideo[height<=720]+bestaudio/best', 'outtmpl': f'{base}.%(ext)s', 'quiet': True}
+        opts = {
+            'format': 'bestvideo+bestaudio/best', 
+            'merge_output_format': 'mp4',
+            'outtmpl': f'{base}.%(ext)s', 
+            'quiet': True
+        }
         if os.path.exists(COOKIES_FILE): opts['cookiefile'] = COOKIES_FILE
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(data.get("url"), download=True)
-            in_file = f"{base}.{info.get('ext', 'mp4')}"
+            in_file = f"{base}.mp4"
             title = info.get('title', 'Video').replace('/', '_').replace('\\', '_')[:15]
         return await process_auto_sub(in_file, data.get("lang"), data.get("action"), background_tasks, title)
     except Exception as e: 
@@ -241,7 +244,7 @@ def process_to_json(transcription):
 async def get_subs(data: dict):
     url = data.get("url"); base = f"tmp_{uuid.uuid4().hex[:5]}"; file_path = None
     try:
-        opts = {'format':'bestaudio/best','outtmpl':f'{base}.%(ext)s','quiet':True}
+        opts = {'format':'bestaudio/best', 'outtmpl':f'{base}.%(ext)s', 'quiet':True}
         if os.path.exists(COOKIES_FILE): opts['cookiefile'] = COOKIES_FILE
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=True); file_path = f"{base}.{info['ext']}"
@@ -290,9 +293,9 @@ async def denoise_url(request: Request, background_tasks: BackgroundTasks):
     out_file = f"clean_{base}.mp4"
 
     try:
-        # 1. تحميل الفيديو
         opts = {
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+            'format': 'bestvideo+bestaudio/best',
+            'merge_output_format': 'mp4',
             'outtmpl': f'{base}.%(ext)s',
             'quiet': True
         }
@@ -301,13 +304,10 @@ async def denoise_url(request: Request, background_tasks: BackgroundTasks):
             
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            in_file = f"{base}.{info.get('ext', 'mp4')}"
+            in_file = f"{base}.mp4"
             title = info.get('title', 'Video')[:15].replace('/', '_')
 
-        # 2. تنقية الصوت بالـ FFmpeg
         subprocess.run(['ffmpeg', '-y', '-i', in_file, '-af', AUDIO_FILTER, '-c:v', 'copy', out_file], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-
-        # 3. إرجاع الملف النهائي ومسح المؤقت
         background_tasks.add_task(cleanup_files, in_file, out_file)
         return FileResponse(out_file, media_type="video/mp4", filename=f"U2_Clean_{title}.mp4")
 
@@ -339,10 +339,17 @@ async def make_shorts_local(background_tasks: BackgroundTasks, file: UploadFile 
 async def make_shorts_url(request: Request, background_tasks: BackgroundTasks):
     data = await request.json(); base = f"tmp_s_{uuid.uuid4().hex[:5]}"; in_file = None
     try:
-        opts = {'format': 'bestvideo[height<=720]+bestaudio/best', 'outtmpl': f'{base}.%(ext)s', 'quiet': True}
+        opts = {
+            'format': 'bestvideo[height<=720]+bestaudio/best', 
+            'merge_output_format': 'mp4',
+            'outtmpl': f'{base}.%(ext)s', 
+            'quiet': True
+        }
         if os.path.exists(COOKIES_FILE): opts['cookiefile'] = COOKIES_FILE
         with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(data.get("url"), download=True); in_file = f"{base}.{info['ext']}"; out_file = f"s_{base}.mp4"
+            info = ydl.extract_info(data.get("url"), download=True)
+            in_file = f"{base}.mp4"
+            out_file = f"s_{base}.mp4"
         subprocess.run(['ffmpeg', '-y', '-i', in_file, '-vf', SHORTS_FILTER, '-c:a', 'copy', out_file], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         background_tasks.add_task(cleanup_files, in_file, out_file)
         return FileResponse(out_file, media_type="video/mp4", filename="U2_Shorts.mp4")
@@ -365,10 +372,6 @@ async def download_thumb_proxy(img_url: str):
     req = requests.get(img_url, stream=True)
     return StreamingResponse(req.iter_content(chunk_size=1024), media_type="image/jpeg", headers={"Content-Disposition": 'attachment; filename="U2_Cover.jpg"'})
 
-# ==========================================
-# 🎙️ محرك الدبلجة الإمبراطوري (النسخة المستقرة)
-# ==========================================
-import edge_tts
 
 # ==========================================
 # 🎙️ محرك الدبلجة السينمائي (ضبط السرعة + جودة HQ)
@@ -384,48 +387,39 @@ async def ai_dubber(request: Request, background_tasks: BackgroundTasks):
     final_vid = f"U2_Dubbed_{uuid.uuid4().hex[:5]}.mp4"
 
     try:
-        # 1. تحميل الفيديو
-        # 1. تحميل الفيديو (تعديل الأوامر لضمان عدم الفشل)
         opts = {
-            'format': 'bestvideo+bestaudio/best', # هات أحسن جودة فيديو وصوت متاحين وادمجهم
-            'outtmpl': in_vid,
+            'format': 'bestvideo+bestaudio/best',
+            'merge_output_format': 'mp4',
+            'outtmpl': f"{base}_in.%(ext)s",
             'quiet': True,
             'no_warnings': True,
-            # إضافة معالج للأخطاء عشان لو الجودة مش موجودة ميفصلش
-            'format_sort': ['res:480', 'ext:mp4:m4a'], 
+            'format_sort': ['res:480'], 
         }
         
-        # التأكد من وجود ملف الكوكيز لو متاح عشان ميتعملش بلوك
         if os.path.exists(COOKIES_FILE): 
             opts['cookiefile'] = COOKIES_FILE
             
         with yt_dlp.YoutubeDL(opts) as ydl:
             ydl.download([url])
 
-        # 2. التفريغ
         ts = transcribe_with_ai(in_vid)
         raw_text = " ".join([s.get('text', '') if isinstance(s, dict) else getattr(s, 'text', '') for s in getattr(ts, 'segments', [])])
 
-        # 3. الترجمة الصارمة (Strict Translation)
         target_lang_name = "Arabic" if "ar-" in voice_name else "English"
         client = Groq(api_key=GROQ_API_KEY)
         
-        # عدلنا الـ Prompt هنا عشان نجبره ميكتبش أي حرف زيادة
         trans_prompt = f"Translate the following text to natural {target_lang_name}. Return ONLY the translated text. Do not include 'Here is the translation' or any English characters if translating to Arabic:\n\n{raw_text}"
         
         chat = client.chat.completions.create(messages=[{"role": "user", "content": trans_prompt}], model="llama-3.1-8b-instant")
         translated_text = chat.choices[0].message.content.strip()
 
-        # 🛡️ فلتر أمان إضافي: إزالة أي حروف إنجليزية لو الدبلجة عربي
         if "ar-" in voice_name:
             import re
             translated_text = re.sub(r'[a-zA-Z]', '', translated_text)
 
-        # 4. توليد الصوت
         communicate = edge_tts.Communicate(translated_text, voice_name, rate='-10%')
         await communicate.save(ai_voice)
 
-        # 5. الدمج
         cmd = [
             'ffmpeg', '-y', '-i', in_vid, '-i', ai_voice,
             '-filter_complex', "[0:a]volume=0.15[bg]; [1:a]volume=1.8[voice]; [bg][voice]amix=inputs=2:duration=first[a]",
@@ -442,5 +436,5 @@ async def ai_dubber(request: Request, background_tasks: BackgroundTasks):
         return JSONResponse({"success": False, "error": str(e)})
     
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 1000))
+    port = int(os.environ.get("PORT", 5000))
     uvicorn.run(app, host="0.0.0.0", port=port)
