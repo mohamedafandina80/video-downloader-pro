@@ -1,8 +1,10 @@
 fastapi
 uvicorn
-yt-dlp
-jinja2
-python-multipart
-requests
-groq
 gunicorn
+replicate
+yt-dlp
+groq
+edge-tts
+requests
+python-multipart
+pydantic
