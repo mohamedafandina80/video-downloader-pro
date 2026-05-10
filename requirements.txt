@@ -2,7 +2,7 @@ fastapi
 uvicorn
 gunicorn
 replicate
-yt-dlp
+yt-dlp>=2024.04.09
 groq
 edge-tts
 requests
