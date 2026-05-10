@@ -70,7 +70,7 @@ async def download(url: str, format_id: str, is_audio: str = "false", start_time
     disposition = "inline" if is_preview else "attachment"
     
     def stream():
-        format_spec = 'bestaudio/best' if is_audio_bool else f'{format_id}+bestaudio/best/best'
+        format_spec = 'bestaudio/best' if is_audio_bool else f'{format_id}+bestaudio/{format_id}/best/b'
         cmd = ['yt-dlp', '--no-check-certificate', '-f', format_spec, '-o', '-']
         # زرع ثغرة الأندرويد في أوامر التحميل المباشر
         cmd.extend(['--extractor-args', 'youtube:player_client=android'])
