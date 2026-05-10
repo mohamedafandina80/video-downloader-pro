@@ -20,15 +20,17 @@ templates = Jinja2Templates(directory="templates")
 # ==========================================
 GROQ_API_KEY = "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"
 
-# التعديل السحري: الكود هيقرا من خزنة Render السحابية، ولو إنت شغال على جهازك هيقرا من الملف العادي
+# التعديل السحري لمسار الكوكيز
 COOKIES_FILE = "/etc/secrets/cookies.txt" if os.path.exists("/etc/secrets/cookies.txt") else "cookies.txt"
 
+# إعدادات يوتيوب الأساسية مع ثغرة تنكر الأندرويد
 YDL_OPTS = {
     'quiet': True, 'no_warnings': True, 'no_check_certificate': True,
     'format': 'bestvideo+bestaudio/best',
     'merge_output_format': 'mp4',
     'cookiefile': COOKIES_FILE if os.path.exists(COOKIES_FILE) else None,
-    'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+    'extractor_args': {'youtube': ['player_client=android']},
+    'http_headers': {'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'}
 }
 
 def cleanup_files(*files):
@@ -70,6 +72,10 @@ async def download(url: str, format_id: str, is_audio: str = "false", start_time
     def stream():
         format_spec = 'bestaudio/best' if is_audio_bool else f'{format_id}+bestaudio/best/best'
         cmd = ['yt-dlp', '--no-check-certificate', '-f', format_spec, '-o', '-']
+        # زرع ثغرة الأندرويد في أوامر التحميل المباشر
+        cmd.extend(['--extractor-args', 'youtube:player_client=android'])
+        cmd.extend(['--user-agent', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'])
+        
         if start_time and end_time: cmd.extend(['--download-sections', f'*{start_time}-{end_time}'])
         if os.path.exists(COOKIES_FILE): cmd.extend(['--cookies', COOKIES_FILE])
         cmd.append(url)
@@ -108,7 +114,9 @@ async def remove_silence_url(request: Request, background_tasks: BackgroundTasks
             'format': 'bestvideo[height<=720]+bestaudio/best',
             'merge_output_format': 'mp4',
             'outtmpl': f'{base}.%(ext)s', 
-            'quiet': True
+            'quiet': True,
+            'extractor_args': {'youtube': ['player_client=android']},
+            'http_headers': {'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'}
         }
         if os.path.exists(COOKIES_FILE): opts['cookiefile'] = COOKIES_FILE
         with yt_dlp.YoutubeDL(opts) as ydl:
@@ -211,7 +219,9 @@ async def autosub_url(request: Request, background_tasks: BackgroundTasks):
             'format': 'bestvideo+bestaudio/best', 
             'merge_output_format': 'mp4',
             'outtmpl': f'{base}.%(ext)s', 
-            'quiet': True
+            'quiet': True,
+            'extractor_args': {'youtube': ['player_client=android']},
+            'http_headers': {'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'}
         }
         if os.path.exists(COOKIES_FILE): opts['cookiefile'] = COOKIES_FILE
         with yt_dlp.YoutubeDL(opts) as ydl:
@@ -244,7 +254,13 @@ def process_to_json(transcription):
 async def get_subs(data: dict):
     url = data.get("url"); base = f"tmp_{uuid.uuid4().hex[:5]}"; file_path = None
     try:
-        opts = {'format':'bestaudio/best', 'outtmpl':f'{base}.%(ext)s', 'quiet':True}
+        opts = {
+            'format':'bestaudio/best', 
+            'outtmpl':f'{base}.%(ext)s', 
+            'quiet':True,
+            'extractor_args': {'youtube': ['player_client=android']},
+            'http_headers': {'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'}
+        }
         if os.path.exists(COOKIES_FILE): opts['cookiefile'] = COOKIES_FILE
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=True); file_path = f"{base}.{info['ext']}"
@@ -297,7 +313,9 @@ async def denoise_url(request: Request, background_tasks: BackgroundTasks):
             'format': 'bestvideo+bestaudio/best',
             'merge_output_format': 'mp4',
             'outtmpl': f'{base}.%(ext)s',
-            'quiet': True
+            'quiet': True,
+            'extractor_args': {'youtube': ['player_client=android']},
+            'http_headers': {'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'}
         }
         if os.path.exists(COOKIES_FILE):
             opts['cookiefile'] = COOKIES_FILE
@@ -343,7 +361,9 @@ async def make_shorts_url(request: Request, background_tasks: BackgroundTasks):
             'format': 'bestvideo[height<=720]+bestaudio/best', 
             'merge_output_format': 'mp4',
             'outtmpl': f'{base}.%(ext)s', 
-            'quiet': True
+            'quiet': True,
+            'extractor_args': {'youtube': ['player_client=android']},
+            'http_headers': {'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'}
         }
         if os.path.exists(COOKIES_FILE): opts['cookiefile'] = COOKIES_FILE
         with yt_dlp.YoutubeDL(opts) as ydl:
@@ -363,7 +383,13 @@ async def make_shorts_url(request: Request, background_tasks: BackgroundTasks):
 @app.post("/tools/thumbnail")
 async def get_thumbnail(data: dict):
     try:
-        with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        opts = {
+            'quiet': True,
+            'extractor_args': {'youtube': ['player_client=android']},
+            'http_headers': {'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'}
+        }
+        if os.path.exists(COOKIES_FILE): opts['cookiefile'] = COOKIES_FILE
+        with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(data.get("url"), download=False); return {"success": True, "url": info.get('thumbnail')}
     except: return {"success": False, "error": "فشل جلب الصورة"}
 
@@ -371,7 +397,6 @@ async def get_thumbnail(data: dict):
 async def download_thumb_proxy(img_url: str):
     req = requests.get(img_url, stream=True)
     return StreamingResponse(req.iter_content(chunk_size=1024), media_type="image/jpeg", headers={"Content-Disposition": 'attachment; filename="U2_Cover.jpg"'})
-
 
 # ==========================================
 # 🎙️ محرك الدبلجة السينمائي (ضبط السرعة + جودة HQ)
@@ -394,6 +419,8 @@ async def ai_dubber(request: Request, background_tasks: BackgroundTasks):
             'quiet': True,
             'no_warnings': True,
             'format_sort': ['res:480'], 
+            'extractor_args': {'youtube': ['player_client=android']},
+            'http_headers': {'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'}
         }
         
         if os.path.exists(COOKIES_FILE): 
