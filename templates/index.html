@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>U2 | Downloader</title>
+    <title>U2 | Emperor Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
@@ -41,7 +41,7 @@
         
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); z-index: 300; display: none; justify-content: center; align-items: center; padding: 1rem; opacity: 0; transition: opacity 0.4s ease; perspective: 1200px; }
         .modal.active { display: flex; opacity: 1; }
-        .modal-content { transform: scale(0.9) rotateX(10deg); opacity: 0; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-content { transform: scale(0.9) rotateX(10deg); opacity: 0; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-height: 95vh; overflow-y: auto; }
         .modal.active .modal-content { transform: scale(1) rotateX(0); opacity: 1; }
         
         .pro-input { width: 100%; padding: 18px 24px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; color: #fff; outline: none; transition: all 0.3s ease; font-weight: 600; font-size: 1.05rem; }
@@ -51,7 +51,6 @@
         html[dir="ltr"] .transcription-editor { text-align: left; }
         .transcription-editor:focus { border-color: rgba(168, 85, 247, 0.9); box-shadow: 0 0 30px rgba(168, 85, 247, 0.25); }
 
-        /* منطقة رفع الملفات النيون */
         .upload-zone { border: 2px dashed rgba(168, 85, 247, 0.5); border-radius: 20px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: rgba(168, 85, 247, 0.05); }
         .upload-zone:hover { background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.9); box-shadow: inset 0 0 20px rgba(168, 85, 247, 0.2); }
         .upload-zone.dragover { background: rgba(168, 85, 247, 0.3); border-color: #a855f7; transform: scale(1.02); }
@@ -85,6 +84,29 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeInUp 0.4s ease; }
         [data-i18n] { transition: opacity 0.3s ease; }
+
+        /* 🎛️ شريط القص التفاعلي */
+        .slider-container { position: relative; width: 100%; height: 40px; margin-top: 10px; display: flex; align-items: center; direction: ltr; }
+        .slider-track { position: absolute; width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+        .slider-fill { position: absolute; height: 8px; background: linear-gradient(90deg, #00e5ff, #3b82f6); border-radius: 4px; pointer-events: none; box-shadow: 0 0 10px rgba(0,229,255,0.4); }
+        .slider-input { position: absolute; width: 100%; -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none; height: 8px; outline: none; }
+        .slider-input::-webkit-slider-thumb { pointer-events: all; width: 22px; height: 22px; -webkit-appearance: none; background: #fff; border: 4px solid var(--ice-blue); border-radius: 50%; cursor: pointer; box-shadow: 0 0 15px rgba(0,229,255,0.8); transition: transform 0.1s; }
+        .slider-input::-webkit-slider-thumb:hover { transform: scale(1.2); }
+        .slider-input::-moz-range-thumb { pointer-events: all; width: 22px; height: 22px; background: #fff; border: 4px solid var(--ice-blue); border-radius: 50%; cursor: pointer; box-shadow: 0 0 15px rgba(0,229,255,0.8); transition: transform 0.1s; }
+
+        /* ========================================= */
+        /* 🚀 شاشة التحميل والشريط المئوي العالمي */
+        /* ========================================= */
+        #downloadOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(25px); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .loading-ring { width: 80px; height: 80px; border: 5px solid rgba(0,229,255,0.1); border-top-color: #00e5ff; border-radius: 50%; animation: spin 1s linear infinite; box-shadow: 0 0 30px rgba(0,229,255,0.3); margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .progress-container { width: 80%; max-width: 500px; margin-top: 20px; text-align: center; }
+        .progress-bar-bg { width: 100%; height: 14px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; position: relative; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
+        .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #00e5ff, #3b82f6, #a855f7); border-radius: 10px; transition: width 0.4s ease; box-shadow: 0 0 20px rgba(0, 229, 255, 0.6); position: relative; }
+        .progress-bar-fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .progress-text { font-size: 2.5rem; font-weight: 900; font-family: monospace; background: linear-gradient(to bottom, #fff, #00e5ff); -webkit-background-clip: text; color: transparent; text-shadow: 0 0 20px rgba(0,229,255,0.3); margin-top: 10px; }
     </style>
 </head>
 <body class="flex flex-col items-center min-h-screen">
@@ -94,6 +116,19 @@
     <div class="floating-orb orb-2"></div>
     <canvas id="particles"></canvas>
     <div id="toast"><i class="fas fa-info-circle text-cyan-400"></i> <span id="toast-msg">رسالة</span></div>
+
+    <div id="downloadOverlay">
+        <div class="loading-ring"></div>
+        <h2 class="text-3xl md:text-4xl font-black text-white mb-2" id="overlayTitle">جاري المعالجة...</h2>
+        <p class="text-gray-400 font-bold tracking-widest text-sm mb-6" id="overlaySubText">يرجى الانتظار وعدم إغلاق الصفحة</p>
+        
+        <div class="progress-container">
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="overlayProgressBar"></div>
+            </div>
+            <div class="progress-text" id="overlayProgressText">0%</div>
+        </div>
+    </div>
 
     <div class="wa-wrapper">
         <a href="https://wa.me/201221309155" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i></a>
@@ -108,15 +143,57 @@
         </div>
         
         <h4 class="text-xs font-bold text-purple-400 mb-4 opacity-80 tracking-wider" data-i18n="ai_category">الذكاء الاصطناعي السحابي</h4>
-        <div onclick="openTool('subsModal')" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl cursor-pointer hover:bg-purple-500/10 hover:border-purple-500/30 border border-transparent transition-all mb-6 group">
-            <div class="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-400 flex justify-center items-center text-xl shadow-inner"><i class="fas fa-brain"></i></div>
+        
+        <div onclick="openTool('subsModal')" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl cursor-pointer hover:bg-purple-500/10 hover:border-purple-500/30 border border-transparent transition-all mb-4 group">
+            <div class="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-400 flex justify-center items-center text-xl shadow-inner"><i class="fas fa-file-alt"></i></div>
             <div>
-                <h3 class="font-bold text-gray-100 text-lg" data-i18n="text_studio">استوديو النصوص</h3>
-                <p class="text-xs text-gray-400 font-semibold mt-1" data-i18n="text_studio_desc">تفريغ يوتيوب وملفات محلية</p>
+                <h3 class="font-bold text-gray-100 text-lg" data-i18n="text_studio">تفريغ النصوص</h3>
+                <p class="text-xs text-gray-400 font-semibold mt-1" data-i18n="text_studio_desc">استخراج النصوص من الفيديوهات</p>
+            </div>
+        </div>
+
+        <div onclick="openTool('dubModal')" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl cursor-pointer hover:bg-cyan-500/10 border border-transparent mb-4 group">
+    <div class="w-12 h-12 rounded-xl bg-cyan-500/20 text-cyan-400 flex justify-center items-center text-xl shadow-inner"><i class="fas fa-microphone-alt"></i></div>
+    <div>
+        <h3 class="font-bold text-gray-100 text-lg">الدبلجة الآلية AI</h3>
+        <p class="text-xs text-gray-400 font-semibold mt-1">ترجمة الفيديو ودبلجته لصوت عربي</p>
+    </div>
+</div>
+
+        <div onclick="openTool('autoSubModal')" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl cursor-pointer hover:bg-yellow-500/10 hover:border-yellow-500/30 border border-transparent transition-all mb-4 group">
+            <div class="w-12 h-12 rounded-xl bg-yellow-500/20 text-yellow-400 flex justify-center items-center text-xl shadow-inner"><i class="fas fa-closed-captioning"></i></div>
+            <div>
+                <h3 class="font-bold text-gray-100 text-lg" data-i18n="autosub_studio">المترجم والدمج التلقائي</h3>
+                <p class="text-xs text-gray-400 font-semibold mt-1" data-i18n="autosub_studio_desc">ترجمة تلقائية ودمج Subtitles</p>
+            </div>
+        </div>
+
+        <div onclick="openTool('denoiseModal')" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl cursor-pointer hover:bg-emerald-500/10 hover:border-emerald-500/30 border border-transparent transition-all mb-6 group">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex justify-center items-center text-xl shadow-inner"><i class="fas fa-headphones-alt"></i></div>
+            <div>
+                <h3 class="font-bold text-gray-100 text-lg" data-i18n="denoise_studio">مُنقي الصوت AI</h3>
+                <p class="text-xs text-gray-400 font-semibold mt-1" data-i18n="denoise_studio_desc">إزالة الضوضاء وتضخيم الصوت</p>
             </div>
         </div>
 
         <h4 class="text-xs font-bold text-cyan-400 mb-4 mt-8 opacity-80 tracking-wider" data-i18n="media_category">أدوات الميديا 4K</h4>
+        
+        <div onclick="openTool('silenceModal')" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl cursor-pointer hover:bg-indigo-500/10 hover:border-indigo-500/30 border border-transparent transition-all mb-4 group">
+            <div class="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex justify-center items-center text-xl shadow-inner"><i class="fas fa-cut"></i></div>
+            <div>
+                <h3 class="font-bold text-gray-100 text-lg" data-i18n="silence_studio">مقص الإمبراطور</h3>
+                <p class="text-xs text-gray-400 font-semibold mt-1" data-i18n="silence_studio_desc">إزالة السكوت (Jump Cuts) تلقائياً</p>
+            </div>
+        </div>
+
+        <div onclick="openTool('shortsModal')" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl cursor-pointer hover:bg-pink-500/10 hover:border-pink-500/30 border border-transparent transition-all mb-4 group">
+            <div class="w-12 h-12 rounded-xl bg-pink-500/20 text-pink-400 flex justify-center items-center text-xl shadow-inner"><i class="fas fa-mobile-alt"></i></div>
+            <div>
+                <h3 class="font-bold text-gray-100 text-lg" data-i18n="shorts_maker">صانع الشورتس</h3>
+                <p class="text-xs text-gray-400 font-semibold mt-1" data-i18n="shorts_maker_desc">تحويل أي فيديو لمقاس 9:16 للريلز</p>
+            </div>
+        </div>
+
         <div onclick="openTool('thumbModal')" class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl cursor-pointer hover:bg-cyan-500/10 hover:border-cyan-500/30 border border-transparent transition-all group">
             <div class="w-12 h-12 rounded-xl bg-cyan-500/20 text-cyan-400 flex justify-center items-center text-xl shadow-inner"><i class="fas fa-camera-retro"></i></div>
             <div>
@@ -126,60 +203,112 @@
         </div>
     </div>
 
-    <div id="subsModal" class="modal">
+    <div id="silenceModal" class="modal">
         <div class="glass-panel modal-content w-full max-w-4xl p-8 md:p-12 relative text-center">
             <button onclick="closeModals()" class="absolute top-6 left-6 text-gray-500 hover:text-red-500 transition-colors bg-white/5 w-10 h-10 rounded-full flex justify-center items-center z-10"><i class="fas fa-times"></i></button>
-            <h2 class="text-3xl md:text-5xl font-black mb-4 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent flex justify-center items-center gap-3"><i class="fas fa-wave-square text-purple-400"></i> <span data-i18n="text_studio_title">استوديو التفريغ</span></h2>
-            <p class="text-sm md:text-base text-gray-400 mb-6" data-i18n="text_studio_sub">محرك الذكاء الاصطناعي السحابي لتحليل الصوتيات واستخراج التوقيتات</p>
+            <h2 class="text-3xl md:text-5xl font-black mb-4 bg-gradient-to-r from-indigo-400 to-blue-500 bg-clip-text text-transparent flex justify-center items-center gap-3"><i class="fas fa-cut text-indigo-400"></i> <span data-i18n="silence_studio_title">مقص الإمبراطور التلقائي</span></h2>
+            <p class="text-sm md:text-base text-gray-400 mb-6" data-i18n="silence_studio_sub">حذف كل لحظات السكوت والصمت من الفيديو في ثوانٍ لصناعة محتوى سريع وجذاب</p>
             
             <div class="flex mb-6 bg-black/40 p-1 rounded-xl border border-white/5 max-w-sm mx-auto">
-                <div onclick="switchTab('youtube')" id="tab-youtube" class="tab-btn active rounded-lg flex items-center justify-center gap-2"><i class="fab fa-youtube"></i> <span data-i18n="tab_youtube">من يوتيوب</span></div>
-                <div onclick="switchTab('local')" id="tab-local" class="tab-btn rounded-lg flex items-center justify-center gap-2"><i class="fas fa-file-audio"></i> <span data-i18n="tab_local">من الجهاز</span></div>
+                <div onclick="switchTabSilence('youtube')" id="tab-silence-youtube" class="tab-btn active rounded-lg flex items-center justify-center gap-2" style="border-color: #818cf8; color: #818cf8;"><i class="fab fa-youtube"></i> <span data-i18n="tab_youtube">من يوتيوب</span></div>
+                <div onclick="switchTabSilence('local')" id="tab-silence-local" class="tab-btn rounded-lg flex items-center justify-center gap-2"><i class="fas fa-video"></i> <span data-i18n="tab_local">من الجهاز</span></div>
             </div>
 
-            <div id="content-youtube" class="tab-content active space-y-4">
-                <input type="text" id="subsUrl" data-i18n-placeholder="subs_placeholder" placeholder="ألصق رابط فيديو اليوتيوب هنا..." class="pro-input text-center text-lg border-purple-500/30 focus:border-purple-500">
-                <button onclick="fetchSubs('url')" id="subsBtnUrl" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-black hover:scale-[1.02] transition-all text-xl shadow-[0_10px_20px_rgba(168,85,247,0.4)]" data-i18n="start_processing">بدء المعالجة الذكية</button>
+            <div id="content-silence-youtube" class="tab-content active space-y-4">
+                <input type="text" id="silenceUrl" data-i18n-placeholder="subs_placeholder" placeholder="ألصق رابط الفيديو هنا..." class="pro-input text-center text-lg border-indigo-500/30 focus:border-indigo-500">
+                <button onclick="executeSilence('url')" id="silenceBtnUrl" class="w-full py-4 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-xl font-black hover:scale-[1.02] transition-all text-xl shadow-[0_10px_20px_rgba(99,102,241,0.4)]" data-i18n="start_silence">قص السكوت وتحميل</button>
             </div>
 
-            <div id="content-local" class="tab-content space-y-4">
-                <input type="file" id="fileInput" accept="audio/*,video/*" class="hidden" onchange="handleFileSelect(event)">
-                <div id="dropZone" class="upload-zone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-                    <i class="fas fa-cloud-upload-alt text-5xl text-purple-400 mb-4 drop-shadow-[0_0_15px_rgba(168,85,247,0.6)]"></i>
-                    <h3 class="text-xl font-bold text-white mb-2" id="fileNameDisplay" data-i18n="drag_drop">اسحب الملف هنا أو اضغط للاختيار</h3>
-                    <p class="text-sm text-gray-500" data-i18n="max_size">صيغ مدعومة (MP3, MP4, WAV) أقصى حجم 25MB</p>
+            <div id="content-silence-local" class="tab-content space-y-4">
+                <input type="file" id="silenceFileInput" accept="video/*" class="hidden" onchange="handleSilenceFileSelect(event)">
+                <div id="silenceDropZone" class="upload-zone" style="border-color: rgba(99, 102, 241, 0.5); background: rgba(99, 102, 241, 0.05);" onclick="document.getElementById('silenceFileInput').click()" ondragover="handleSilenceDragOver(event)" ondragleave="handleSilenceDragLeave(event)" ondrop="handleSilenceDrop(event)">
+                    <i class="fas fa-cloud-upload-alt text-5xl text-indigo-400 mb-4 drop-shadow-[0_0_15px_rgba(99,102,241,0.6)]"></i>
+                    <h3 class="text-xl font-bold text-white mb-2" id="silenceFileNameDisplay" data-i18n="drag_drop">اسحب الفيديو هنا أو اضغط للاختيار</h3>
+                    <p class="text-sm text-gray-500" data-i18n="max_size_video">أقصى حجم 100MB</p>
                 </div>
-                <button onclick="fetchSubs('file')" id="subsBtnFile" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-black hover:scale-[1.02] transition-all text-xl shadow-[0_10px_20px_rgba(168,85,247,0.4)] opacity-50 cursor-not-allowed" disabled data-i18n="start_processing_file">رفع وبدء المعالجة</button>
-            </div>
-
-            <div id="subsRes" class="hidden mt-8 space-y-6">
-                <div class="relative group">
-                    <textarea id="subsText" class="transcription-editor custom-scroll" placeholder="..."></textarea>
-                    <button onclick="copyTranscription()" class="absolute top-4 right-4 bg-black/60 hover:bg-black/80 text-white px-5 py-2.5 rounded-xl text-sm font-bold backdrop-blur-md border border-white/10 transition-all flex items-center gap-2"><i class="fas fa-copy"></i> <span data-i18n="copy_text">نسخ النص</span></button>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button onclick="downloadSubs('srt')" class="flex-1 py-4 bg-green-600/20 border border-green-500/50 text-green-400 hover:bg-green-600 hover:text-white rounded-xl font-black transition-all text-lg"><i class="fas fa-file-code mx-2"></i> <span data-i18n="download_srt">تحميل (SRT)</span></button>
-                    <button onclick="downloadSubs('txt')" class="flex-1 py-4 bg-blue-600/20 border border-blue-500/50 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl font-black transition-all text-lg"><i class="fas fa-file-alt mx-2"></i> <span data-i18n="download_txt">تحميل (TXT)</span></button>
-                </div>
+                <button onclick="executeSilence('file')" id="silenceBtnFile" class="w-full py-4 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-xl font-black hover:scale-[1.02] transition-all text-xl shadow-[0_10px_20px_rgba(99,102,241,0.4)] opacity-50 cursor-not-allowed" disabled data-i18n="start_silence_file">رفع وقص السكوت</button>
             </div>
         </div>
     </div>
 
-    <div id="thumbModal" class="modal">
-        <div class="glass-panel modal-content w-full max-w-2xl p-8 md:p-12 relative text-center">
-            <button onclick="closeModals()" class="absolute top-6 left-6 text-gray-500 hover:text-red-500 bg-white/5 w-10 h-10 rounded-full flex justify-center items-center"><i class="fas fa-times"></i></button>
-            <h2 class="text-4xl font-black glow-text mb-6 flex justify-center items-center gap-3"><i class="fas fa-camera"></i> <span data-i18n="cover_hunter">صائد الأغلفة</span></h2>
-            <input type="text" id="toolUrl" data-i18n-placeholder="thumb_placeholder" placeholder="رابط الفيديو..." class="pro-input mb-6 text-center text-lg">
-            <button onclick="fetchThumb()" id="thumbBtn" class="w-full py-5 bg-cyan-500/20 text-cyan-400 border border-cyan-400/50 rounded-2xl font-bold mb-6 hover:bg-cyan-500 hover:text-black transition-all text-xl" data-i18n="fetch_cover">جلب الغلاف بأعلى جودة</button>
+    <div id="autoSubModal" class="modal">
+        <div class="glass-panel modal-content w-full max-w-4xl p-8 md:p-12 relative text-center">
+            <button onclick="closeModals()" class="absolute top-6 left-6 text-gray-500 hover:text-red-500 transition-colors bg-white/5 w-10 h-10 rounded-full flex justify-center items-center z-10"><i class="fas fa-times"></i></button>
+            <h2 class="text-3xl md:text-5xl font-black mb-4 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent flex justify-center items-center gap-3"><i class="fas fa-closed-captioning text-yellow-400"></i> <span data-i18n="autosub_studio_title">المترجم التلقائي للـ Subtitles</span></h2>
+            <p class="text-sm md:text-base text-gray-400 mb-6" data-i18n="autosub_studio_sub">استخراج الصوت وترجمته ودمجه كمسار ترجمة منفصل بجودة 100%</p>
             
-            <div id="thumbRes" class="hidden">
-                <div class="relative rounded-2xl overflow-hidden border-2 border-cyan-400/30 mb-6 shadow-2xl group">
-                    <img id="fetchedThumb" class="w-full object-cover transition-transform duration-500 group-hover:scale-110">
+            <div class="flex mb-6 bg-black/40 p-1 rounded-xl border border-white/5 max-w-sm mx-auto">
+                <div onclick="switchTabAutoSub('youtube')" id="tab-autosub-youtube" class="tab-btn active rounded-lg flex items-center justify-center gap-2" style="border-color: #fbbf24; color: #fbbf24;"><i class="fab fa-youtube"></i> <span data-i18n="tab_youtube">من يوتيوب</span></div>
+                <div onclick="switchTabAutoSub('local')" id="tab-autosub-local" class="tab-btn rounded-lg flex items-center justify-center gap-2"><i class="fas fa-video"></i> <span data-i18n="tab_local">من الجهاز</span></div>
+            </div>
+
+            <div class="mb-6 max-w-sm mx-auto text-right">
+                <label class="block text-gray-300 text-sm font-bold mb-2">اختر لغة الترجمة:</label>
+                <select id="autoSubLang" class="pro-input py-3 text-lg bg-black/80 border-yellow-500/50 appearance-none text-center font-bold">
+                    <option value="Arabic">العربية 🇸🇦</option>
+                    <option value="English">الإنجليزية 🇺🇸</option>
+                    <option value="French">الفرنسية 🇫🇷</option>
+                    <option value="Spanish">الإسبانية 🇪🇸</option>
+                    <option value="Original">لغة الفيديو الأصلية (بدون ترجمة)</option>
+                </select>
+            </div>
+
+            <div id="content-autosub-youtube" class="tab-content active space-y-4">
+                <input type="text" id="autoSubUrl" data-i18n-placeholder="subs_placeholder" placeholder="ألصق رابط الفيديو هنا..." class="pro-input text-center text-lg border-yellow-500/30 focus:border-yellow-500">
+                <div class="flex flex-col md:flex-row gap-4 mt-4">
+                    <button onclick="executeAutoSub('url', 'srt')" id="autoSubBtnUrlSrt" class="flex-1 py-4 bg-gray-800 border border-yellow-500/50 text-yellow-400 rounded-xl font-black hover:bg-yellow-500 hover:text-black transition-all text-lg shadow-lg"><i class="fas fa-file-code mx-2"></i> تحميل ملف SRT</button>
+                    <button onclick="executeAutoSub('url', 'video')" id="autoSubBtnUrlVid" class="flex-1 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-black rounded-xl font-black hover:scale-[1.02] transition-all text-lg shadow-[0_10px_20px_rgba(245,158,11,0.4)]"><i class="fas fa-film mx-2"></i> دمج الترجمة (MP4)</button>
                 </div>
-                <button onclick="downloadThumb()" class="w-full py-5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-2xl font-black shadow-[0_10px_30px_rgba(0,229,255,0.4)] hover:scale-[1.02] transition-all text-xl"><i class="fas fa-download mx-2"></i> <span data-i18n="download_4k">تحميل 4K مباشر</span></button>
+            </div>
+
+            <div id="content-autosub-local" class="tab-content space-y-4">
+                <input type="file" id="autoSubFileInput" accept="video/*,audio/*" class="hidden" onchange="handleAutoSubFileSelect(event)">
+                <div id="autoSubDropZone" class="upload-zone" style="border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.05);" onclick="document.getElementById('autoSubFileInput').click()" ondragover="handleAutoSubDragOver(event)" ondragleave="handleAutoSubDragLeave(event)" ondrop="handleAutoSubDrop(event)">
+                    <i class="fas fa-cloud-upload-alt text-5xl text-yellow-400 mb-4 drop-shadow-[0_0_15px_rgba(245,158,11,0.6)]"></i>
+                    <h3 class="text-xl font-bold text-white mb-2" id="autoSubFileNameDisplay" data-i18n="drag_drop">اسحب الفيديو هنا أو اضغط للاختيار</h3>
+                    <p class="text-sm text-gray-500" data-i18n="max_size_video">أقصى حجم 100MB</p>
+                </div>
+                <div class="flex flex-col md:flex-row gap-4 mt-4">
+                    <button onclick="executeAutoSub('file', 'srt')" id="autoSubBtnFileSrt" class="flex-1 py-4 bg-gray-800 border border-yellow-500/50 text-yellow-400 rounded-xl font-black hover:bg-yellow-500 hover:text-black transition-all text-lg shadow-lg opacity-50" disabled><i class="fas fa-file-code mx-2"></i> استخراج SRT</button>
+                    <button onclick="executeAutoSub('file', 'video')" id="autoSubBtnFileVid" class="flex-1 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-black rounded-xl font-black hover:scale-[1.02] transition-all text-lg shadow-[0_10px_20px_rgba(245,158,11,0.4)] opacity-50" disabled><i class="fas fa-film mx-2"></i> دمج الترجمة</button>
+                </div>
             </div>
         </div>
     </div>
+
+    <div id="subsModal" class="modal"><div class="glass-panel modal-content w-full max-w-4xl p-8 md:p-12 relative text-center"><button onclick="closeModals()" class="absolute top-6 left-6 text-gray-500 hover:text-red-500 transition-colors bg-white/5 w-10 h-10 rounded-full flex justify-center items-center z-10"><i class="fas fa-times"></i></button><h2 class="text-3xl md:text-5xl font-black mb-4 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent flex justify-center items-center gap-3"><i class="fas fa-file-alt text-purple-400"></i> <span data-i18n="text_studio_title">تفريغ النصوص</span></h2><p class="text-sm md:text-base text-gray-400 mb-6" data-i18n="text_studio_sub">محرك الذكاء الاصطناعي لتحليل الصوتيات واستخراج النصوص</p><div class="flex mb-6 bg-black/40 p-1 rounded-xl border border-white/5 max-w-sm mx-auto"><div onclick="switchTab('youtube')" id="tab-youtube" class="tab-btn active rounded-lg flex items-center justify-center gap-2"><i class="fab fa-youtube"></i> <span data-i18n="tab_youtube">من يوتيوب</span></div><div onclick="switchTab('local')" id="tab-local" class="tab-btn rounded-lg flex items-center justify-center gap-2"><i class="fas fa-file-audio"></i> <span data-i18n="tab_local">من الجهاز</span></div></div><div id="content-youtube" class="tab-content active space-y-4"><input type="text" id="subsUrl" data-i18n-placeholder="subs_placeholder" placeholder="ألصق رابط الفيديو هنا..." class="pro-input text-center text-lg border-purple-500/30 focus:border-purple-500"><button onclick="fetchSubs('url')" id="subsBtnUrl" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-black hover:scale-[1.02] transition-all text-xl shadow-[0_10px_20px_rgba(168,85,247,0.4)]" data-i18n="start_processing">استخراج النص</button></div><div id="content-local" class="tab-content space-y-4"><input type="file" id="fileInput" accept="audio/*,video/*" class="hidden" onchange="handleFileSelect(event)"><div id="dropZone" class="upload-zone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)"><i class="fas fa-cloud-upload-alt text-5xl text-purple-400 mb-4 drop-shadow-[0_0_15px_rgba(168,85,247,0.6)]"></i><h3 class="text-xl font-bold text-white mb-2" id="fileNameDisplay" data-i18n="drag_drop">اسحب الملف هنا أو اضغط للاختيار</h3><p class="text-sm text-gray-500" data-i18n="max_size">أقصى حجم 25MB</p></div><button onclick="fetchSubs('file')" id="subsBtnFile" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-black hover:scale-[1.02] transition-all text-xl shadow-[0_10px_20px_rgba(168,85,247,0.4)] opacity-50 cursor-not-allowed" disabled data-i18n="start_processing_file">رفع واستخراج</button></div><div id="subsRes" class="hidden mt-8 space-y-6"><div class="relative group"><textarea id="subsText" class="transcription-editor custom-scroll" placeholder="..."></textarea><button onclick="copyTranscription()" class="absolute top-4 right-4 bg-black/60 hover:bg-black/80 text-white px-5 py-2.5 rounded-xl text-sm font-bold backdrop-blur-md border border-white/10 transition-all flex items-center gap-2"><i class="fas fa-copy"></i> <span data-i18n="copy_text">نسخ النص</span></button></div></div></div></div>
+
+    <div id="denoiseModal" class="modal"><div class="glass-panel modal-content w-full max-w-4xl p-8 md:p-12 relative text-center"><button onclick="closeModals()" class="absolute top-6 left-6 text-gray-500 hover:text-red-500 transition-colors bg-white/5 w-10 h-10 rounded-full flex justify-center items-center z-10"><i class="fas fa-times"></i></button><h2 class="text-3xl md:text-5xl font-black mb-4 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent flex justify-center items-center gap-3"><i class="fas fa-headphones-alt text-emerald-400"></i> <span data-i18n="denoise_studio_title">مُنقي الصوت الإمبراطوري</span></h2><p class="text-sm md:text-base text-gray-400 mb-6" data-i18n="denoise_studio_sub">إزالة الشوشرة والضوضاء ورفع جودة الصوت لمستوى الاستوديوهات</p><div class="flex mb-6 bg-black/40 p-1 rounded-xl border border-white/5 max-w-sm mx-auto"><div onclick="switchTabDenoise('youtube')" id="tab-denoise-youtube" class="tab-btn active rounded-lg flex items-center justify-center gap-2" style="border-color: #10b981; color: #10b981;"><i class="fab fa-youtube"></i> <span data-i18n="tab_youtube">من يوتيوب</span></div><div onclick="switchTabDenoise('local')" id="tab-denoise-local" class="tab-btn rounded-lg flex items-center justify-center gap-2"><i class="fas fa-file-audio"></i> <span data-i18n="tab_local">من الجهاز</span></div></div><div id="content-denoise-youtube" class="tab-content active space-y-4"><input type="text" id="denoiseUrl" data-i18n-placeholder="subs_placeholder" placeholder="ألصق رابط الفيديو هنا..." class="pro-input text-center text-lg border-emerald-500/30 focus:border-emerald-500"><button onclick="executeDenoise('url')" id="denoiseBtnUrl" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl font-black hover:scale-[1.02] transition-all text-xl shadow-[0_10px_20px_rgba(16,185,129,0.4)]" data-i18n="start_denoise">تنقية وتحميل الملف</button></div><div id="content-denoise-local" class="tab-content space-y-4"><input type="file" id="denoiseFileInput" accept="audio/*,video/*" class="hidden" onchange="handleDenoiseFileSelect(event)"><div id="denoiseDropZone" class="upload-zone" style="border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.05);" onclick="document.getElementById('denoiseFileInput').click()" ondragover="handleDenoiseDragOver(event)" ondragleave="handleDenoiseDragLeave(event)" ondrop="handleDenoiseDrop(event)"><i class="fas fa-cloud-upload-alt text-5xl text-emerald-400 mb-4 drop-shadow-[0_0_15px_rgba(16,185,129,0.6)]"></i><h3 class="text-xl font-bold text-white mb-2" id="denoiseFileNameDisplay" data-i18n="drag_drop">اسحب الملف هنا</h3><p class="text-sm text-gray-500">أقصى حجم 50MB</p></div><button onclick="executeDenoise('file')" id="denoiseBtnFile" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl font-black hover:scale-[1.02] transition-all text-xl shadow-[0_10px_20px_rgba(16,185,129,0.4)] opacity-50 cursor-not-allowed" disabled data-i18n="start_denoise_file">رفع وتنقية الصوت</button></div></div></div>
+
+    <div id="shortsModal" class="modal"><div class="glass-panel modal-content w-full max-w-4xl p-8 md:p-12 relative text-center"><button onclick="closeModals()" class="absolute top-6 left-6 text-gray-500 hover:text-red-500 transition-colors bg-white/5 w-10 h-10 rounded-full flex justify-center items-center z-10"><i class="fas fa-times"></i></button><h2 class="text-3xl md:text-5xl font-black mb-4 bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent flex justify-center items-center gap-3"><i class="fas fa-mobile-alt text-pink-400"></i> <span data-i18n="shorts_studio_title">استوديو الشورتس والريلز</span></h2><p class="text-sm md:text-base text-gray-400 mb-6" data-i18n="shorts_studio_sub">تحويل أي فيديو عرضي إلى مقاس الموبايل 9:16 تلقائياً</p><div class="flex mb-6 bg-black/40 p-1 rounded-xl border border-white/5 max-w-sm mx-auto"><div onclick="switchTabShorts('youtube')" id="tab-shorts-youtube" class="tab-btn active rounded-lg flex items-center justify-center gap-2" style="border-color: #ec4899; color: #ec4899;"><i class="fab fa-youtube"></i> <span data-i18n="tab_youtube">من يوتيوب</span></div><div onclick="switchTabShorts('local')" id="tab-shorts-local" class="tab-btn rounded-lg flex items-center justify-center gap-2"><i class="fas fa-video"></i> <span data-i18n="tab_local">من الجهاز</span></div></div><div id="content-shorts-youtube" class="tab-content active space-y-4"><input type="text" id="shortsUrl" data-i18n-placeholder="subs_placeholder" placeholder="ألصق رابط الفيديو هنا..." class="pro-input text-center text-lg border-pink-500/30 focus:border-pink-500"><button onclick="executeShorts('url')" id="shortsBtnUrl" class="w-full py-4 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-xl font-black hover:scale-[1.02] transition-all text-xl shadow-[0_10px_20px_rgba(236,72,153,0.4)]" data-i18n="start_shorts">تحويل إلى شورتس</button></div><div id="content-shorts-local" class="tab-content space-y-4"><input type="file" id="shortsFileInput" accept="video/*" class="hidden" onchange="handleShortsFileSelect(event)"><div id="shortsDropZone" class="upload-zone" style="border-color: rgba(236, 72, 153, 0.5); background: rgba(236, 72, 153, 0.05);" onclick="document.getElementById('shortsFileInput').click()" ondragover="handleShortsDragOver(event)" ondragleave="handleShortsDragLeave(event)" ondrop="handleShortsDrop(event)"><i class="fas fa-cloud-upload-alt text-5xl text-pink-400 mb-4 drop-shadow-[0_0_15px_rgba(236,72,153,0.6)]"></i><h3 class="text-xl font-bold text-white mb-2" id="shortsFileNameDisplay" data-i18n="drag_drop">اسحب الفيديو هنا</h3><p class="text-sm text-gray-500">أقصى حجم 100MB</p></div><button onclick="executeShorts('file')" id="shortsBtnFile" class="w-full py-4 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-xl font-black hover:scale-[1.02] transition-all text-xl shadow-[0_10px_20px_rgba(236,72,153,0.4)] opacity-50 cursor-not-allowed" disabled data-i18n="start_shorts_file">رفع وتحويل الفيديو</button></div></div></div>
+
+    <div id="thumbModal" class="modal"><div class="glass-panel modal-content w-full max-w-2xl p-8 md:p-12 relative text-center"><button onclick="closeModals()" class="absolute top-6 left-6 text-gray-500 hover:text-red-500 bg-white/5 w-10 h-10 rounded-full flex justify-center items-center"><i class="fas fa-times"></i></button><h2 class="text-4xl font-black glow-text mb-6 flex justify-center items-center gap-3"><i class="fas fa-camera"></i> <span data-i18n="cover_hunter">صائد الأغلفة</span></h2><input type="text" id="toolUrl" data-i18n-placeholder="thumb_placeholder" placeholder="رابط الفيديو..." class="pro-input mb-6 text-center text-lg"><button onclick="fetchThumb()" id="thumbBtn" class="w-full py-5 bg-cyan-500/20 text-cyan-400 border border-cyan-400/50 rounded-2xl font-bold mb-6 hover:bg-cyan-500 hover:text-black transition-all text-xl" data-i18n="fetch_cover">جلب الغلاف بأعلى جودة</button><div id="thumbRes" class="hidden"><div class="relative rounded-2xl overflow-hidden border-2 border-cyan-400/30 mb-6 shadow-2xl group"><img id="fetchedThumb" class="w-full object-cover transition-transform duration-500 group-hover:scale-110"></div><button onclick="downloadThumb()" class="w-full py-5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-2xl font-black shadow-[0_10px_30px_rgba(0,229,255,0.4)] hover:scale-[1.02] transition-all text-xl"><i class="fas fa-download mx-2"></i> <span data-i18n="download_4k">تحميل 4K مباشر</span></button></div></div></div>
+
+    <div id="actionModal" class="modal"><div class="glass-panel modal-content w-full max-w-3xl p-8 relative text-center rounded-[30px]"><button onclick="closeActionModal()" class="absolute top-6 left-6 text-gray-500 hover:text-red-500 transition-colors bg-white/5 w-10 h-10 rounded-full flex justify-center items-center z-10"><i class="fas fa-times"></i></button><h2 class="text-2xl font-black text-cyan-400 mb-2 line-clamp-1" id="actionTitle"></h2><p class="text-gray-400 text-sm mb-6 font-bold" id="actionQuality"></p><div class="rounded-2xl overflow-hidden border-2 border-cyan-400/30 bg-black mb-6 shadow-[0_10px_30px_rgba(0,229,255,0.2)]"><video id="previewPlayer" controls playsinline class="w-full max-h-[350px] outline-none"></video></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"><button onclick="executeMainDownload(false)" class="py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl font-black text-white hover:scale-105 transition shadow-lg text-lg"><i class="fas fa-download mx-2"></i> تحميل كامل</button><button onclick="document.getElementById('cutSection').classList.toggle('hidden')" class="py-4 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl font-black text-white hover:scale-105 transition shadow-lg text-lg"><i class="fas fa-cut mx-2"></i> قص وتعديل الفيديو</button></div>
+            
+            <div id="cutSection" class="hidden bg-black/60 p-6 rounded-2xl border border-cyan-400/30 backdrop-blur-md">
+                <h3 class="text-cyan-400 font-bold mb-4 flex items-center justify-center gap-2"><i class="fas fa-sliders-h"></i> حدد مسار القص بدقة</h3>
+                
+                <div class="slider-container mb-6" id="sliderContainer">
+                    <div class="slider-track"></div>
+                    <div class="slider-fill" id="sliderFill"></div>
+                    <input type="range" id="sliderStart" class="slider-input" min="0" max="100" value="0" step="0.1" oninput="updateSlider('start')">
+                    <input type="range" id="sliderEnd" class="slider-input" min="0" max="100" value="100" step="0.1" oninput="updateSlider('end')">
+                </div>
+
+                <div class="flex justify-between items-center gap-4 mb-6">
+                    <div class="w-full text-center">
+                        <label class="block text-gray-400 text-xs mb-2 font-bold bg-black/40 py-1 rounded-md">يبدأ من</label>
+                        <input type="text" id="actionStartTime" class="pro-input text-center py-2 text-xl font-mono text-cyan-400 bg-transparent border-none shadow-none" readonly>
+                    </div>
+                    <div class="w-full text-center">
+                        <label class="block text-gray-400 text-xs mb-2 font-bold bg-black/40 py-1 rounded-md">ينتهي عند</label>
+                        <input type="text" id="actionEndTime" class="pro-input text-center py-2 text-xl font-mono text-cyan-400 bg-transparent border-none shadow-none" readonly>
+                    </div>
+                </div>
+                <button onclick="executeMainDownload(true)" class="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:scale-[1.02] rounded-xl text-white font-black transition text-xl shadow-[0_10px_20px_rgba(0,229,255,0.3)]"><i class="fas fa-cut mx-2"></i> تحميل الجزء المحدد فقط</button>
+            </div>
+    </div></div>
 
     <nav class="w-full max-w-7xl flex justify-between items-center py-6 px-6 z-10 relative">
         <div class="flex items-center gap-5">
@@ -189,19 +318,10 @@
                 U2 <span class="text-white text-xl md:text-2xl opacity-80 mt-1">| Downloader</span>
             </h1>
         </div>
-        
         <div class="flex items-center gap-4">
             <div class="relative" id="langContainer">
-                <div onclick="toggleLang(event)" class="w-12 h-12 rounded-full border border-white/10 bg-white/5 flex justify-center items-center cursor-pointer hover:border-cyan-400 hover:bg-cyan-900/30 transition-all shadow-xl text-gray-300 hover:text-cyan-400 text-xl">
-                    <i class="fas fa-globe"></i>
-                </div>
-                <div class="lang-dropdown" id="langMenu">
-                    <div class="custom-scroll max-h-64 overflow-y-auto p-2">
-                        <div class="lang-item" onclick="changeLang('ar')"><span class="flag-icon">🇸🇦</span> <span class="text-base font-bold text-white">العربية</span></div>
-                        <div class="lang-item" onclick="changeLang('en')"><span class="flag-icon">🇺🇸</span> <span class="text-base font-bold text-white">English</span></div>
-                        <div class="lang-item" onclick="changeLang('fr')"><span class="flag-icon">🇫🇷</span> <span class="text-base font-bold text-white">Français</span></div>
-                    </div>
-                </div>
+                <div onclick="toggleLang(event)" class="w-12 h-12 rounded-full border border-white/10 bg-white/5 flex justify-center items-center cursor-pointer hover:border-cyan-400 hover:bg-cyan-900/30 transition-all shadow-xl text-gray-300 hover:text-cyan-400 text-xl"><i class="fas fa-globe"></i></div>
+                <div class="lang-dropdown" id="langMenu"><div class="custom-scroll max-h-64 overflow-y-auto p-2"><div class="lang-item" onclick="changeLang('ar')"><span class="flag-icon">🇸🇦</span> <span class="text-base font-bold text-white">العربية</span></div><div class="lang-item" onclick="changeLang('en')"><span class="flag-icon">🇺🇸</span> <span class="text-base font-bold text-white">English</span></div></div></div>
             </div>
         </div>
     </nav>
@@ -211,7 +331,6 @@
             <h2 class="text-6xl md:text-8xl lg:text-[10rem] font-black italic bg-gradient-to-b from-white to-cyan-500 bg-clip-text text-transparent drop-shadow-[0_20px_50px_rgba(0,229,255,0.3)] leading-none" data-i18n="hero_title">THE ENGINE</h2>
             <p class="tracking-[10px] md:tracking-[25px] text-sm font-bold text-cyan-400 uppercase mt-6 opacity-80" data-i18n="hero_sub">Download Everything</p>
         </div>
-
         <div class="glass-panel p-8 md:p-14 animate__animated animate__zoomIn relative overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-t from-cyan-900/10 to-transparent pointer-events-none"></div>
             <div class="flex flex-col md:flex-row gap-5 relative z-10">
@@ -230,121 +349,316 @@
 
         <div id="results" class="hidden animate__animated animate__fadeInUp pb-16">
             <div class="glass-panel p-6 md:p-10 flex flex-col md:flex-row gap-10 text-right" id="resultsPanel">
-                <div class="w-full md:w-[400px] shrink-0 relative rounded-3xl overflow-hidden border border-cyan-400/30 shadow-2xl group">
-                    <img id="mainThumb" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-                </div>
+                <div class="w-full md:w-[400px] shrink-0 relative rounded-3xl overflow-hidden border border-cyan-400/30 shadow-2xl group"><img id="mainThumb" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"><div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div></div>
                 <div class="flex-1 space-y-6 flex flex-col justify-between">
-                    <div>
-                        <span class="bg-cyan-500/20 text-cyan-400 px-4 py-1.5 rounded-lg text-xs font-bold mb-4 inline-block border border-cyan-500/30 shadow-lg" data-i18n="ready_dl">متوفر للتحميل</span>
-                        <h3 id="mainTitle" class="text-3xl md:text-4xl font-black text-white leading-relaxed line-clamp-3"></h3>
-                    </div>
+                    <div><span class="bg-cyan-500/20 text-cyan-400 px-4 py-1.5 rounded-lg text-xs font-bold mb-4 inline-block border border-cyan-500/30 shadow-lg" data-i18n="ready_dl">متوفر للتحميل (اختر لمعاينة)</span><h3 id="mainTitle" class="text-3xl md:text-4xl font-black text-white leading-relaxed line-clamp-3"></h3></div>
                     <div id="formatsBox" class="grid grid-cols-1 gap-4 max-h-60 overflow-y-auto px-2 custom-scroll"></div>
-                    <button onclick="dl(true)" class="w-full py-5 bg-gradient-to-r from-blue-900/50 to-cyan-900/50 border border-cyan-500/30 text-white rounded-2xl font-black hover:border-cyan-400 hover:shadow-[0_0_25px_rgba(0,229,255,0.3)] transition-all text-xl flex items-center justify-center gap-3"><i class="fas fa-music text-cyan-400 text-2xl"></i> <span data-i18n="extract_mp3">استخراج الملف الصوتي (MP3)</span></button>
+                    <button onclick="openActionModal(true, 'bestaudio', 'صوت فقط MP3')" class="w-full py-5 bg-gradient-to-r from-blue-900/50 to-cyan-900/50 border border-cyan-500/30 text-white rounded-2xl font-black hover:border-cyan-400 hover:shadow-[0_0_25px_rgba(0,229,255,0.3)] transition-all text-xl flex items-center justify-center gap-3"><i class="fas fa-music text-cyan-400 text-2xl"></i> <span data-i18n="extract_mp3">استخراج الملف الصوتي (MP3)</span></button>
                 </div>
             </div>
         </div>
     </main>
 
-    <div class="w-full max-w-6xl mx-auto py-4 px-4 text-center z-10"></div>
-
     <script>
-        // 🌍 القاموس (الترجمة)
+        // القاموس وإعدادات الواجهة الأساسية
         const translations = {
-            'ar': { 'tools_title': 'أدوات الإمبراطور', 'ai_category': 'الذكاء الاصطناعي السحابي', 'text_studio': 'استوديو النصوص', 'text_studio_desc': 'تفريغ يوتيوب وملفات محلية', 'media_category': 'أدوات الميديا 4K', 'cover_hunter': 'صائد الأغلفة', 'cover_hunter_desc': 'سحب الغلاف الأصلي بأعلى جودة', 'wa_tooltip': 'تواصل مع الإدارة', 'hero_title': 'THE ENGINE', 'hero_sub': 'حمّـل أي شـيء. مـن أي مكـان.', 'analyze_btn': 'تحليل', 'ready_dl': 'متوفر للتحميل', 'extract_mp3': 'استخراج الملف الصوتي (MP3)', 'text_studio_title': 'استوديو التفريغ', 'text_studio_sub': 'محرك الذكاء الاصطناعي لتحليل الصوتيات واستخراج التوقيتات', 'start_processing': 'بدء المعالجة الذكية', 'start_processing_file': 'رفع وبدء المعالجة', 'copy_text': 'نسخ النص', 'download_srt': 'تحميل (SRT)', 'download_txt': 'تحميل (TXT)', 'fetch_cover': 'جلب الغلاف بأعلى جودة', 'download_4k': 'تحميل 4K مباشر', 'tab_youtube': 'من يوتيوب', 'tab_local': 'من الجهاز', 'drag_drop': 'اسحب الملف هنا أو اضغط للاختيار', 'max_size': 'صيغ مدعومة (MP3, MP4, WAV) أقصى حجم 25MB' },
-            'en': { 'tools_title': 'Emperor Tools', 'ai_category': 'Cloud AI Engine', 'text_studio': 'Text Studio', 'text_studio_desc': 'Transcribe YouTube & Local Files', 'media_category': '4K Media Tools', 'cover_hunter': 'Cover Hunter', 'cover_hunter_desc': 'Extract original HQ covers', 'wa_tooltip': 'Contact Support', 'hero_title': 'THE ENGINE', 'hero_sub': 'Download Everything. Everywhere.', 'analyze_btn': 'Analyze', 'ready_dl': 'Ready to Download', 'extract_mp3': 'Extract Audio (MP3)', 'text_studio_title': 'Transcription Studio', 'text_studio_sub': 'Cloud AI engine to analyze audio and extract timed subtitles', 'start_processing': 'Start AI Processing', 'start_processing_file': 'Upload & Process', 'copy_text': 'Copy Text', 'download_srt': 'Download (SRT)', 'download_txt': 'Download (TXT)', 'fetch_cover': 'Fetch Highest Quality', 'download_4k': 'Direct 4K Download', 'tab_youtube': 'From YouTube', 'tab_local': 'From Device', 'drag_drop': 'Drag file here or click to select', 'max_size': 'Supported (MP3, MP4, WAV) Max 25MB' },
-            'fr': { 'tools_title': 'Outils Empereur', 'ai_category': 'IA Nuageuse', 'text_studio': 'Studio Texte', 'text_studio_desc': 'Transcrire YouTube et Local', 'media_category': 'Outils Média 4K', 'cover_hunter': 'Chasseur Couverture', 'cover_hunter_desc': 'Extraire couverture HQ', 'wa_tooltip': 'Contacter Support', 'hero_title': 'LE MOTEUR', 'hero_sub': 'Tout Télécharger.', 'analyze_btn': 'Analyser', 'ready_dl': 'Prêt à Télécharger', 'extract_mp3': 'Extraire Audio (MP3)', 'text_studio_title': 'Studio Transcription', 'text_studio_sub': 'Moteur IA cloud pour analyser audio', 'start_processing': 'Démarrer IA', 'start_processing_file': 'Télécharger et Traiter', 'copy_text': 'Copier Texte', 'download_srt': 'Télécharger (SRT)', 'download_txt': 'Télécharger (TXT)', 'fetch_cover': 'Extraire Qualité', 'download_4k': 'Télécharger 4K', 'tab_youtube': 'De YouTube', 'tab_local': 'De l\'appareil', 'drag_drop': 'Glissez fichier ici ou cliquez', 'max_size': 'Supporté (MP3, MP4) Max 25MB' }
+            'ar': { 'tools_title': 'أدوات الإمبراطور', 'ai_category': 'الذكاء الاصطناعي السحابي', 'text_studio': 'تفريغ النصوص', 'text_studio_desc': 'استخراج النصوص من الفيديوهات', 'autosub_studio': 'المترجم والدمج التلقائي', 'autosub_studio_desc': 'ترجمة تلقائية ودمج Subtitles', 'denoise_studio': 'مُنقي الصوت AI', 'denoise_studio_desc': 'إزالة الضوضاء وتضخيم الصوت', 'media_category': 'أدوات الميديا 4K', 'silence_studio': 'مقص الإمبراطور', 'silence_studio_desc': 'إزالة السكوت (Jump Cuts) تلقائياً', 'cover_hunter': 'صائد الأغلفة', 'cover_hunter_desc': 'سحب الغلاف الأصلي بأعلى جودة', 'shorts_maker': 'صانع الشورتس', 'shorts_maker_desc': 'تحويل أي فيديو لمقاس 9:16 للريلز', 'wa_tooltip': 'تواصل مع الإدارة', 'hero_title': 'THE ENGINE', 'hero_sub': 'حمّـل أي شـيء. مـن أي مكـان.', 'analyze_btn': 'تحليل', 'ready_dl': 'متوفر للتحميل (اختر لمعاينة)', 'extract_mp3': 'استخراج الملف الصوتي (MP3)', 'text_studio_title': 'تفريغ النصوص', 'text_studio_sub': 'محرك الذكاء الاصطناعي لتحليل الصوتيات واستخراج النصوص', 'autosub_studio_title': 'المترجم التلقائي للـ Subtitles', 'autosub_studio_sub': 'استخراج الصوت وترجمته ودمجه كمسار ترجمة منفصل بجودة 100%', 'silence_studio_title': 'مقص الإمبراطور التلقائي', 'silence_studio_sub': 'حذف كل لحظات السكوت والصمت من الفيديو في ثوانٍ لصناعة محتوى سريع وجذاب', 'denoise_studio_title': 'مُنقي الصوت الإمبراطوري', 'denoise_studio_sub': 'إزالة الشوشرة والضوضاء ورفع جودة الصوت لمستوى الاستوديوهات', 'shorts_studio_title': 'استوديو الشورتس والريلز', 'shorts_studio_sub': 'قم بتحويل أي فيديو عرضي إلى مقاس الموبايل 9:16 تلقائياً وبأعلى جودة', 'start_processing': 'استخراج النص', 'start_processing_file': 'رفع واستخراج', 'start_silence': 'قص السكوت وتحميل', 'start_silence_file': 'رفع وقص السكوت', 'start_denoise': 'تنقية وتحميل الملف', 'start_denoise_file': 'رفع وتنقية الصوت', 'start_shorts': 'تحويل إلى شورتس', 'start_shorts_file': 'رفع وتحويل الفيديو', 'copy_text': 'نسخ النص', 'download_srt': 'تحميل (SRT)', 'download_txt': 'تحميل (TXT)', 'fetch_cover': 'جلب الغلاف بأعلى جودة', 'download_4k': 'تحميل 4K مباشر', 'tab_youtube': 'من يوتيوب', 'tab_local': 'من الجهاز', 'drag_drop': 'اسحب الملف هنا أو اضغط للاختيار', 'max_size': 'أقصى حجم 25MB', 'max_size_video': 'أقصى حجم 100MB' },
+            'en': { 'tools_title': 'Emperor Tools', 'ai_category': 'Cloud AI Engine', 'text_studio': 'Transcribe Text', 'text_studio_desc': 'Extract text from videos', 'autosub_studio': 'Auto Sub & Translate', 'autosub_studio_desc': 'Auto translate and embed subs', 'denoise_studio': 'AI Audio Denoise', 'denoise_studio_desc': 'Remove noise & enhance audio', 'media_category': '4K Media Tools', 'silence_studio': 'Auto Silence Cutter', 'silence_studio_desc': 'Remove jump cuts automatically', 'cover_hunter': 'Cover Hunter', 'cover_hunter_desc': 'Extract original HQ covers', 'shorts_maker': 'Shorts Maker', 'shorts_maker_desc': 'Convert any video to 9:16 format', 'wa_tooltip': 'Contact Support', 'hero_title': 'THE ENGINE', 'hero_sub': 'Download Everything. Everywhere.', 'analyze_btn': 'Analyze', 'ready_dl': 'Ready to Download (Click to Preview)', 'extract_mp3': 'Extract Audio (MP3)', 'text_studio_title': 'Transcription Studio', 'text_studio_sub': 'Cloud AI engine to analyze audio and extract text', 'autosub_studio_title': 'Auto Subtitle & Translator', 'autosub_studio_sub': 'Extract, translate, and embed subtitles keeping 100% quality', 'silence_studio_title': 'Auto Silence Remover', 'silence_studio_sub': 'Instantly remove all silent moments to create fast-paced content', 'denoise_studio_title': 'Imperial Audio Purifier', 'denoise_studio_sub': 'Remove background noise and elevate audio to studio quality', 'shorts_studio_title': 'Shorts & Reels Studio', 'shorts_studio_sub': 'Automatically convert horizontal videos to 9:16 vertical format in HQ', 'start_processing': 'Extract Text', 'start_processing_file': 'Upload & Extract', 'start_silence': 'Cut Silence & Download', 'start_silence_file': 'Upload & Cut Silence', 'start_denoise': 'Purify & Download', 'start_denoise_file': 'Upload & Purify', 'start_shorts': 'Convert to Shorts', 'start_shorts_file': 'Upload & Convert', 'copy_text': 'Copy Text', 'download_srt': 'Download (SRT)', 'download_txt': 'Download (TXT)', 'fetch_cover': 'Fetch Highest Quality', 'download_4k': 'Direct 4K Download', 'tab_youtube': 'From YouTube', 'tab_local': 'From Device', 'drag_drop': 'Drag file here or click to select', 'max_size': 'Max size 25MB', 'max_size_video': 'Max size 100MB' }
         };
-        const placeholders = {
-            'ar': { 'main_placeholder': 'ألصق رابط الفيديو هنا لتبدأ السحر...', 'subs_placeholder': 'ألصق رابط فيديو اليوتيوب هنا...', 'thumb_placeholder': 'رابط الفيديو...' },
-            'en': { 'main_placeholder': 'Paste video link here to start the magic...', 'subs_placeholder': 'Paste YouTube link here...', 'thumb_placeholder': 'Video Link...' },
-            'fr': { 'main_placeholder': 'Collez le lien de la vidéo ici...', 'subs_placeholder': 'Collez le lien YouTube ici...', 'thumb_placeholder': 'Lien vidéo...' }
-        };
+        const placeholders = { 'ar': { 'main_placeholder': 'ألصق رابط الفيديو هنا لتبدأ السحر...', 'subs_placeholder': 'ألصق الرابط هنا...', 'thumb_placeholder': 'رابط الفيديو...' }, 'en': { 'main_placeholder': 'Paste video link here to start the magic...', 'subs_placeholder': 'Paste link here...', 'thumb_placeholder': 'Video Link...' } };
 
         function changeLang(langCode) {
-            const dict = translations[langCode] || translations['en'];
-            const pDict = placeholders[langCode] || placeholders['en'];
+            const dict = translations[langCode] || translations['en'], pDict = placeholders[langCode] || placeholders['en'];
             document.documentElement.dir = (langCode === 'ar') ? 'rtl' : 'ltr';
             document.getElementById('resultsPanel').style.textAlign = (langCode === 'ar') ? 'right' : 'left';
             document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(dict[key]) { el.style.opacity = 0; setTimeout(() => { el.innerHTML = dict[key]; el.style.opacity = 1; }, 200); } });
             document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { const key = el.getAttribute('data-i18n-placeholder'); if(pDict[key]) { el.placeholder = pDict[key]; } });
-            const langNames = {'ar': 'العربية', 'en': 'English', 'fr': 'Français'};
-            showToast(`تم تغيير اللغة إلى: ${langNames[langCode]}`, 'success');
-            document.getElementById('langMenu').classList.remove('show');
+            showToast(`تم تغيير اللغة بنجاح`, 'success'); document.getElementById('langMenu').classList.remove('show');
         }
 
-        // 🌌 الجزيئات
         const cvs = document.getElementById('particles'), ctx = cvs.getContext('2d'); let p = []; let mouse = {x: null, y: null}; window.addEventListener('mousemove', (e) => { mouse.x = e.x; mouse.y = e.y; });
         function initP() { cvs.width = innerWidth; cvs.height = innerHeight; p = []; const count = window.innerWidth < 768 ? 40 : 90; for(let i=0; i<count; i++) p.push({x:Math.random()*cvs.width, y:Math.random()*cvs.height, vx:(Math.random()-0.5)*0.5, vy:(Math.random()-0.5)*0.5, size:Math.random()*2+1}); }
         function drawP() { ctx.clearRect(0,0,cvs.width,cvs.height); for(let i=0; i<p.length; i++) { p[i].x += p[i].vx; p[i].y += p[i].vy; if(p[i].x < 0 || p[i].x > cvs.width) p[i].vx *= -1; if(p[i].y < 0 || p[i].y > cvs.height) p[i].vy *= -1; ctx.beginPath(); ctx.arc(p[i].x, p[i].y, p[i].size, 0, Math.PI*2); ctx.fillStyle = "rgba(0, 229, 255, 0.4)"; ctx.fill(); if(mouse.x && mouse.y) { let dx = mouse.x - p[i].x, dy = mouse.y - p[i].y, dist = Math.sqrt(dx*dx + dy*dy); if(dist < 180) { ctx.beginPath(); ctx.moveTo(p[i].x, p[i].y); ctx.lineTo(mouse.x, mouse.y); ctx.strokeStyle = `rgba(0, 229, 255, ${1 - dist/180})`; ctx.lineWidth = 0.6; ctx.stroke(); } } } requestAnimationFrame(drawP); }
         initP(); drawP(); window.onresize = initP;
 
-        // 🔔 الإشعارات واللغات والنوافذ
         function showToast(msg, type = 'info') { const toast = document.getElementById('toast'); const icon = type === 'success' ? '<i class="fas fa-check-circle text-green-400"></i>' : type === 'error' ? '<i class="fas fa-exclamation-triangle text-red-400"></i>' : '<i class="fas fa-info-circle text-cyan-400"></i>'; toast.innerHTML = `${icon} <span class="text-sm md:text-base">${msg}</span>`; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3500); }
         function toggleLang(e) { e.stopPropagation(); document.getElementById('langMenu').classList.toggle('show'); }
         window.addEventListener('click', function(e) { if (!document.getElementById('langContainer').contains(e.target)) { document.getElementById('langMenu').classList.remove('show'); } });
-        function toggleSidebar() { const s = document.getElementById('toolsSidebar'); const o = document.getElementById('sidebarOverlay'); if(s.classList.contains('open')) { s.classList.remove('open'); o.style.opacity='0'; setTimeout(()=>o.classList.add('hidden'),300); } else { s.classList.add('open'); o.classList.remove('hidden'); setTimeout(()=>o.style.opacity='1',10); } }
+        function toggleSidebar() { const s = document.getElementById('toolsSidebar'), o = document.getElementById('sidebarOverlay'); if(s.classList.contains('open')) { s.classList.remove('open'); o.style.opacity='0'; setTimeout(()=>o.classList.add('hidden'),300); } else { s.classList.add('open'); o.classList.remove('hidden'); setTimeout(()=>o.style.opacity='1',10); } }
         function openTool(id) { toggleSidebar(); document.getElementById(id).classList.add('active'); document.body.style.overflow = 'hidden'; }
-        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); document.body.style.overflow = 'auto'; }
-        function switchTab(t) { document.querySelectorAll('.tab-btn, .tab-content').forEach(e => e.classList.remove('active')); document.getElementById(`tab-${t}`).classList.add('active'); document.getElementById(`content-${t}`).classList.add('active'); }
-        window.onclick = e => { if (e.target.classList.contains('modal')) closeModals(); }
+        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); document.body.style.overflow = 'auto'; closeActionModal(); }
 
-        // 📤 إدارة رفع الملفات
-        let selectedFile = null;
-        function handleFileSelect(e) { const file = e.target.files[0]; if(file) updateFileUI(file); }
-        function handleDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
-        function handleDragLeave(e) { e.preventDefault(); document.getElementById('dropZone').classList.remove('dragover'); }
-        function handleDrop(e) { e.preventDefault(); document.getElementById('dropZone').classList.remove('dragover'); const file = e.dataTransfer.files[0]; if(file) updateFileUI(file); }
-        function updateFileUI(file) {
-            if(file.size > 26214400) return showToast('حجم الملف يتخطى 25 ميجابايت', 'error');
-            selectedFile = file;
-            document.getElementById('fileNameDisplay').innerHTML = `<i class="fas fa-file-audio text-green-400 mr-2"></i> ${file.name}`;
-            const btn = document.getElementById('subsBtnFile');
-            btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        // ==========================================
+        // 🚀 نظام شاشة التحميل الذكية (Global Progress)
+        // ==========================================
+        let progressInterval = null;
+        function showProgressOverlay(title, subText, autoCloseTime = 0) {
+            // ✂️ تم حذف أمر الإغلاق من هنا عشان النافذة تفضل فاتحة وتشوف النتيجة فوراً
+            document.getElementById('overlayTitle').innerText = title;
+            document.getElementById('overlaySubText').innerText = subText;
+            document.getElementById('overlayProgressBar').style.width = '0%';
+            document.getElementById('overlayProgressText').innerText = '0%';
+            document.getElementById('downloadOverlay').style.display = 'flex';
+
+            let progress = 0;
+            clearInterval(progressInterval);
+            progressInterval = setInterval(() => {
+                progress += (95 - progress) * 0.05; // تباطؤ ذكي
+                document.getElementById('overlayProgressBar').style.width = `${progress}%`;
+                document.getElementById('overlayProgressText').innerText = `${Math.floor(progress)}%`;
+            }, 300);
+
+            if(autoCloseTime > 0) {
+                setTimeout(() => finishProgressOverlay(), autoCloseTime);
+            }
         }
 
-        // 🧠 استخراج النصوص
-        async function fetchSubs(mode) {
-            let bodyData, urlEndpoint;
-            const btn = mode === 'url' ? document.getElementById('subsBtnUrl') : document.getElementById('subsBtnFile');
+        function finishProgressOverlay() {
+            clearInterval(progressInterval);
+            document.getElementById('overlayProgressBar').style.width = '100%';
+            document.getElementById('overlayProgressText').innerText = '100%';
+            setTimeout(() => { document.getElementById('downloadOverlay').style.display = 'none'; showToast('تمت العملية بنجاح!', 'success'); }, 800);
+        }
+
+        function hideProgressOverlay() {
+            clearInterval(progressInterval);
+            document.getElementById('downloadOverlay').style.display = 'none';
+        }
+
+        // 🎬 نافذة المعاينة والتحميل
+        let currentDownloadConfig = {};
+        async function analyzeMain() { const url = document.getElementById('mainUrl').value; if(!url) return showToast('أدخل الرابط', 'error'); document.getElementById('loader').classList.remove('hidden'); document.getElementById('results').classList.add('hidden'); try { const r = await fetch('/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url})}); const d = await r.json(); document.getElementById('loader').classList.add('hidden'); if(d.success) { document.getElementById('results').classList.remove('hidden'); document.getElementById('mainThumb').src = d.thumbnail; document.getElementById('mainTitle').innerText = d.title; const box = document.getElementById('formatsBox'); box.innerHTML = ''; d.formats.forEach(f => { box.innerHTML += `<button onclick="openActionModal(false, '${f.id}', '${f.label}')" class="p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-cyan-400 hover:bg-cyan-500/10 font-bold flex justify-between items-center transition-all group"><span class="text-gray-300 group-hover:text-white transition-colors text-lg" dir="ltr">${f.label}</span><span class="bg-black/60 px-4 py-2 rounded-xl text-cyan-400 font-mono shadow-inner border border-white/5">${f.size}</span></button>`; }); showToast('تم التحليل بنجاح', 'success'); } else showToast(d.error, 'error'); } catch(e) { document.getElementById('loader').classList.add('hidden'); showToast('خطأ بالاتصال', 'error'); } }
+        function openActionModal(isAudio, formatId, qualityLabel) { currentDownloadConfig = { url: document.getElementById('mainUrl').value, format_id: formatId, is_audio: isAudio }; document.getElementById('actionTitle').innerText = document.getElementById('mainTitle').innerText; document.getElementById('actionQuality').innerText = `الجودة المختارة: ${qualityLabel}`; document.getElementById('cutSection').classList.add('hidden'); const player = document.getElementById('previewPlayer'); player.src = `/download?url=${encodeURIComponent(currentDownloadConfig.url)}&format_id=${formatId}&is_audio=${isAudio}&preview=true`; player.poster = document.getElementById('mainThumb').src; document.getElementById('actionModal').classList.add('active'); document.body.style.overflow = 'hidden'; }
+        function closeActionModal() { document.getElementById('actionModal').classList.remove('active'); const player = document.getElementById('previewPlayer'); player.pause(); player.src = ""; document.body.style.overflow = 'auto'; }
+        
+        function executeMainDownload(isCut = false) { 
+            let url = `/download?url=${encodeURIComponent(currentDownloadConfig.url)}&format_id=${currentDownloadConfig.format_id}&is_audio=${currentDownloadConfig.is_audio}&preview=false`; 
+            if(isCut) { 
+                const start = document.getElementById('actionStartTime').value, end = document.getElementById('actionEndTime').value; 
+                if(!start || !end) return showToast("أدخل الوقت!", "error"); 
+                url += `&start_time=${start}&end_time=${end}`; 
+            } 
+            showProgressOverlay("جاري تجهيز التحميل 🚀", "سيتم تنزيل الملف فوراً...", 6000);
+            window.location.href = url; 
+        }
+
+        // 🌐 المترجم والدمج التلقائي
+        function switchTabAutoSub(t) { document.querySelectorAll('#autoSubModal .tab-btn').forEach(e => { e.classList.remove('active'); e.style.borderColor = 'transparent'; e.style.color = '#6b7280'; }); document.querySelectorAll('#autoSubModal .tab-content').forEach(e => e.classList.remove('active')); const activeBtn = document.getElementById(`tab-autosub-${t}`); activeBtn.classList.add('active'); activeBtn.style.borderColor = '#fbbf24'; activeBtn.style.color = '#fbbf24'; document.getElementById(`content-autosub-${t}`).classList.add('active'); }
+        let autoSubFile = null;
+        function handleAutoSubFileSelect(e) { const file = e.target.files[0]; if(file) updateAutoSubUI(file); }
+        function handleAutoSubDragOver(e) { e.preventDefault(); document.getElementById('autoSubDropZone').classList.add('dragover'); }
+        function handleAutoSubDragLeave(e) { e.preventDefault(); document.getElementById('autoSubDropZone').classList.remove('dragover'); }
+        function handleAutoSubDrop(e) { e.preventDefault(); document.getElementById('autoSubDropZone').classList.remove('dragover'); const file = e.dataTransfer.files[0]; if(file) updateAutoSubUI(file); }
+        function updateAutoSubUI(file) { autoSubFile = file; document.getElementById('autoSubFileNameDisplay').innerHTML = `<i class="fas fa-check-circle text-yellow-400 mr-2"></i> ${file.name}`; document.getElementById('autoSubBtnFileSrt').disabled = false; document.getElementById('autoSubBtnFileVid').disabled = false; document.getElementById('autoSubBtnFileSrt').classList.remove('opacity-50'); document.getElementById('autoSubBtnFileVid').classList.remove('opacity-50'); }
+
+        async function executeAutoSub(mode, actionType) {
+            let btn;
+            if(mode === 'url') btn = actionType === 'srt' ? document.getElementById('autoSubBtnUrlSrt') : document.getElementById('autoSubBtnUrlVid');
+            else btn = actionType === 'srt' ? document.getElementById('autoSubBtnFileSrt') : document.getElementById('autoSubBtnFileVid');
             
-            if(mode === 'url') {
-                const url = document.getElementById('subsUrl').value; if(!url) return showToast('أدخل الرابط أولاً', 'error');
-                bodyData = JSON.stringify({url}); urlEndpoint = '/tools/subs';
-            } else {
-                if(!selectedFile) return showToast('اختر ملفاً أولاً', 'error');
-                bodyData = new FormData(); bodyData.append("file", selectedFile); urlEndpoint = '/tools/subs/upload';
-            }
+            const origText = btn.innerHTML;
+            const lang = document.getElementById('autoSubLang').value;
             
             btn.disabled = true;
-            let progress = 0, msgs = ["جاري الرفع والسحب...", "معالجة سحابية...", "تحليل الكلمات...", "تنسيق الـ SRT..."], msgIdx = 0;
-            let interval = setInterval(() => {
-                progress += Math.random() * 4; if(progress > 95) progress = 95;
-                if(progress > 25) msgIdx = 1; if(progress > 55) msgIdx = 2; if(progress > 85) msgIdx = 3;
-                btn.innerHTML = `<div class="flex flex-col items-center w-full px-6"><span class="text-xs mb-2 text-purple-200 animate-pulse">${msgs[msgIdx]}</span><div class="w-full bg-black/40 rounded-full h-2 border border-purple-500/30 overflow-hidden"><div class="bg-gradient-to-r from-purple-500 to-cyan-400 h-full transition-all" style="width: ${progress}%"></div></div></div>`;
-            }, 600);
-
+            showProgressOverlay("المترجم التلقائي 🌍", "يتم الآن التفريغ والترجمة والدمج...");
+            
             try {
-                const options = mode === 'url' ? {method:'POST', headers:{'Content-Type':'application/json'}, body: bodyData} : {method:'POST', body: bodyData};
-                const r = await fetch(urlEndpoint, options); const d = await r.json(); clearInterval(interval);
+                let response;
+                if(mode === 'url') {
+                    const url = document.getElementById('autoSubUrl').value;
+                    if(!url) { hideProgressOverlay(); btn.disabled = false; return showToast('أدخل الرابط أولاً', 'error'); }
+                    response = await fetch('/tools/autosub/url', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url: url, lang: lang, action: actionType}) });
+                } else {
+                    if(!autoSubFile) { hideProgressOverlay(); btn.disabled = false; return showToast('اختر فيديو أولاً', 'error'); }
+                    const fd = new FormData(); fd.append('file', autoSubFile); fd.append('lang', lang); fd.append('action', actionType);
+                    response = await fetch('/tools/autosub/local', { method: 'POST', body: fd });
+                }
+                
+                if (response.ok && response.headers.get("content-type") !== "application/json") {
+                    const blob = await response.blob();
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                    a.download = response.headers.get("Content-Disposition")?.split('filename="')[1]?.split('"')[0] || (actionType === "srt" ? "U2_Subtitles.srt" : "U2_Subbed_Video.mp4");
+                    a.click();
+                    finishProgressOverlay();
+                    setTimeout(() => { btn.disabled = false; }, 3000);
+                } else { const d = await response.json(); hideProgressOverlay(); btn.disabled = false; showToast("خطأ: " + (d.error || "تعذر التحويل"), 'error'); }
+            } catch (e) { hideProgressOverlay(); btn.disabled = false; showToast("حدث خطأ بالاتصال.", 'error'); }
+        }
+
+        // ✂️ مقص الإمبراطور التلقائي 
+        function switchTabSilence(t) { document.querySelectorAll('#silenceModal .tab-btn').forEach(e => { e.classList.remove('active'); e.style.borderColor = 'transparent'; e.style.color = '#6b7280'; }); document.querySelectorAll('#silenceModal .tab-content').forEach(e => e.classList.remove('active')); const activeBtn = document.getElementById(`tab-silence-${t}`); activeBtn.classList.add('active'); activeBtn.style.borderColor = '#818cf8'; activeBtn.style.color = '#818cf8'; document.getElementById(`content-silence-${t}`).classList.add('active'); }
+        let silenceFile = null; 
+        function handleSilenceFileSelect(e) { const file = e.target.files[0]; if(file) { silenceFile = file; document.getElementById('silenceFileNameDisplay').innerHTML = `<i class="fas fa-check text-indigo-400 mr-2"></i> ${file.name}`; document.getElementById('silenceBtnFile').disabled = false; document.getElementById('silenceBtnFile').classList.remove('opacity-50', 'cursor-not-allowed'); } } 
+        function handleSilenceDragOver(e) { e.preventDefault(); document.getElementById('silenceDropZone').classList.add('dragover'); } 
+        function handleSilenceDragLeave(e) { e.preventDefault(); document.getElementById('silenceDropZone').classList.remove('dragover'); } 
+        function handleSilenceDrop(e) { e.preventDefault(); document.getElementById('silenceDropZone').classList.remove('dragover'); const file = e.dataTransfer.files[0]; if(file) handleSilenceFileSelect({target:{files:[file]}}); }
+        
+        async function executeSilence(mode) { 
+            let btn = mode === 'url' ? document.getElementById('silenceBtnUrl') : document.getElementById('silenceBtnFile'); 
+            const origText = btn.innerHTML; 
+            btn.disabled = true; 
+            showProgressOverlay("مقص الإمبراطور ✂️", "يتم الآن إزالة السكوت من الفيديو بالذكاء الاصطناعي...");
+            try { 
+                let response; 
+                if(mode === 'url') { 
+                    const url = document.getElementById('silenceUrl').value; 
+                    if(!url) { hideProgressOverlay(); btn.disabled = false; return showToast('أدخل الرابط', 'error'); } 
+                    response = await fetch('/tools/silence/url', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url: url}) }); 
+                } else { 
+                    if(!silenceFile) { hideProgressOverlay(); btn.disabled = false; return showToast('اختر فيديو', 'error'); } 
+                    const fd = new FormData(); fd.append('file', silenceFile); 
+                    response = await fetch('/tools/silence/local', { method: 'POST', body: fd }); 
+                } 
+                if (response.ok && response.headers.get("content-type") !== "application/json") { 
+                    const blob = await response.blob(); 
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); 
+                    a.download = response.headers.get("Content-Disposition")?.split('filename="')[1]?.split('"')[0] || "U2_NoSilence.mp4"; 
+                    a.click(); 
+                    finishProgressOverlay();
+                    setTimeout(() => { btn.disabled = false; }, 3000); 
+                } else { hideProgressOverlay(); btn.disabled = false; showToast("فشل القص", "error");} 
+            } catch (e) { hideProgressOverlay(); btn.disabled = false; showToast("خطأ بالاتصال", "error"); } 
+        }
+
+        // 📝 تفريغ، 🎧 منقي، 📱 شورتس، 🖼️ أغلفة
+        function switchTab(t) { document.querySelectorAll('#subsModal .tab-btn').forEach(e => { e.classList.remove('active'); }); document.querySelectorAll('#subsModal .tab-content').forEach(e => e.classList.remove('active')); document.getElementById(`tab-${t}`).classList.add('active'); document.getElementById(`content-${t}`).classList.add('active'); }
+        function switchTabDenoise(t) { document.querySelectorAll('#denoiseModal .tab-btn').forEach(e => { e.classList.remove('active'); e.style.borderColor = 'transparent'; e.style.color = '#6b7280'; }); document.querySelectorAll('#denoiseModal .tab-content').forEach(e => e.classList.remove('active')); const activeBtn = document.getElementById(`tab-denoise-${t}`); activeBtn.classList.add('active'); activeBtn.style.borderColor = '#10b981'; activeBtn.style.color = '#10b981'; document.getElementById(`content-denoise-${t}`).classList.add('active'); }
+        function switchTabShorts(t) { document.querySelectorAll('#shortsModal .tab-btn').forEach(e => { e.classList.remove('active'); e.style.borderColor = 'transparent'; e.style.color = '#6b7280'; }); document.querySelectorAll('#shortsModal .tab-content').forEach(e => e.classList.remove('active')); const activeBtn = document.getElementById(`tab-shorts-${t}`); activeBtn.classList.add('active'); activeBtn.style.borderColor = '#ec4899'; activeBtn.style.color = '#ec4899'; document.getElementById(`content-shorts-${t}`).classList.add('active'); }
+        
+        let selectedFile = null; function handleFileSelect(e) { const file = e.target.files[0]; if(file) { selectedFile = file; document.getElementById('fileNameDisplay').innerHTML = `<i class="fas fa-file-audio text-purple-400 mr-2"></i> ${file.name}`; document.getElementById('subsBtnFile').disabled = false; document.getElementById('subsBtnFile').classList.remove('opacity-50', 'cursor-not-allowed'); } }
+        async function fetchSubs(mode) { 
+            let bodyData, urlEndpoint; const btn = mode === 'url' ? document.getElementById('subsBtnUrl') : document.getElementById('subsBtnFile'); 
+            if(mode === 'url') { const url = document.getElementById('subsUrl').value; if(!url) return showToast('أدخل الرابط', 'error'); bodyData = JSON.stringify({url}); urlEndpoint = '/tools/subs'; } else { if(!selectedFile) return showToast('اختر ملف', 'error'); bodyData = new FormData(); bodyData.append("file", selectedFile); urlEndpoint = '/tools/subs/upload'; } 
+            btn.disabled = true; 
+            showProgressOverlay("تفريغ النصوص 📝", "جاري استخراج النص من الصوت...");
+            try { 
+                const options = mode === 'url' ? {method:'POST', headers:{'Content-Type':'application/json'}, body: bodyData} : {method:'POST', body: bodyData}; 
+                const r = await fetch(urlEndpoint, options); const d = await r.json(); 
                 if(d.success) { 
-                    btn.innerHTML = `<i class="fas fa-check-circle mr-2"></i> اكتمل بنجاح`; 
-                    document.getElementById('subsRes').classList.remove('hidden'); document.getElementById('subsText').value = d.text; showToast('الذكاء الاصطناعي أتم المهمة', 'success'); 
-                    setTimeout(() => { btn.innerHTML = mode === 'url' ? "تحليل فيديو آخر" : "رفع ملف آخر"; btn.disabled = false; }, 3000); 
-                } else { showToast(d.error, 'error'); btn.innerText = "فشل.. حاول مجدداً"; btn.disabled = false; }
-            } catch(e) { clearInterval(interval); showToast('خطأ بالسيرفر', 'error'); btn.innerText = "فشل الاتصال"; btn.disabled = false; }
+                    document.getElementById('subsRes').classList.remove('hidden'); document.getElementById('subsText').value = d.text; 
+                    finishProgressOverlay();
+                    setTimeout(() => { btn.disabled = false; }, 2000); 
+                } else { hideProgressOverlay(); showToast(d.error, 'error'); btn.disabled = false; } 
+            } catch(e) { hideProgressOverlay(); showToast('خطأ', 'error'); btn.disabled = false; } 
         }
         function copyTranscription() { const text = document.getElementById('subsText'); text.select(); navigator.clipboard.writeText(text.value); showToast('تم النسخ', 'success'); }
-        function downloadSubs(fmt) { const blob = new Blob([document.getElementById('subsText').value], {type:"text/plain;charset=utf-8"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `U2_Transcription.${fmt}`; a.click(); }
 
-        // 🖼️ صائد الصور والمحرك الرئيسي (بدون تغيير)
-        let currentThumbUrl = "";
-        async function fetchThumb() { const url = document.getElementById('toolUrl').value; if(!url) return showToast('أدخل الرابط', 'error'); const btn = document.getElementById('thumbBtn'), orig = btn.innerText; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> استخراج...'; try { const r = await fetch('/tools/thumbnail', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url})}); const d = await r.json(); btn.innerHTML = orig; if(d.success) { currentThumbUrl = d.url; document.getElementById('thumbRes').classList.remove('hidden'); document.getElementById('fetchedThumb').src = d.url; showToast('تم الاستخراج', 'success'); } else showToast(d.error, 'error'); } catch(e) { btn.innerHTML = orig; showToast('خطأ بالاتصال', 'error'); } }
+        let denoiseFile = null; function handleDenoiseFileSelect(e) { const file = e.target.files[0]; if(file) { denoiseFile = file; document.getElementById('denoiseFileNameDisplay').innerHTML = `<i class="fas fa-check text-emerald-400 mr-2"></i> ${file.name}`; document.getElementById('denoiseBtnFile').disabled = false; document.getElementById('denoiseBtnFile').classList.remove('opacity-50', 'cursor-not-allowed'); } }
+        async function executeDenoise(mode) { 
+            const btn = mode === 'url' ? document.getElementById('denoiseBtnUrl') : document.getElementById('denoiseBtnFile'); const origText = btn.innerText; btn.disabled = true; 
+            showProgressOverlay("مُنقي الصوت 🎧", "يتم الآن إزالة الضوضاء وتضخيم الصوت...");
+            try { let response; if(mode === 'url') { response = await fetch('/tools/denoise/url', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url: document.getElementById('denoiseUrl').value}) }); } else { const fd = new FormData(); fd.append('file', denoiseFile); response = await fetch('/tools/denoise/local', { method: 'POST', body: fd }); } if (response.ok && response.headers.get("content-type") !== "application/json") { const blob = await response.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = response.headers.get("Content-Disposition")?.split('filename="')[1]?.split('"')[0] || "U2_Cleaned.mp4"; a.click(); finishProgressOverlay(); setTimeout(() => { btn.disabled = false; }, 3000); } else { hideProgressOverlay(); btn.disabled = false; showToast("فشل", "error");} } catch (e) { hideProgressOverlay(); btn.disabled = false; showToast("خطأ", "error"); } 
+        }
+
+        let shortsFile = null; function handleShortsFileSelect(e) { const file = e.target.files[0]; if(file) { shortsFile = file; document.getElementById('shortsFileNameDisplay').innerHTML = `<i class="fas fa-check text-pink-400 mr-2"></i> ${file.name}`; document.getElementById('shortsBtnFile').disabled = false; document.getElementById('shortsBtnFile').classList.remove('opacity-50', 'cursor-not-allowed'); } }
+        async function executeShorts(mode) { 
+            const btn = mode === 'url' ? document.getElementById('shortsBtnUrl') : document.getElementById('shortsBtnFile'); const origText = btn.innerText; btn.disabled = true; 
+            showProgressOverlay("صانع الشورتس 📱", "يتم التحويل إلى مقاس 9:16...");
+            try { let response; if(mode === 'url') { response = await fetch('/tools/shorts/url', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url: document.getElementById('shortsUrl').value}) }); } else { const fd = new FormData(); fd.append('file', shortsFile); response = await fetch('/tools/shorts/local', { method: 'POST', body: fd }); } if (response.ok && response.headers.get("content-type") !== "application/json") { const blob = await response.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = response.headers.get("Content-Disposition")?.split('filename="')[1]?.split('"')[0] || "U2_Shorts.mp4"; a.click(); finishProgressOverlay(); setTimeout(() => { btn.disabled = false; }, 3000); } else { hideProgressOverlay(); btn.disabled = false; showToast("فشل", "error"); } } catch (e) { hideProgressOverlay(); btn.disabled = false; showToast("خطأ", "error");} 
+        }
+
+        let currentThumbUrl = ""; async function fetchThumb() { const url = document.getElementById('toolUrl').value; if(!url) return showToast('أدخل الرابط', 'error'); const btn = document.getElementById('thumbBtn'), orig = btn.innerText; btn.disabled = true; showProgressOverlay("جلب الغلاف 🖼️", "يتم سحب أعلى جودة..."); try { const r = await fetch('/tools/thumbnail', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url})}); const d = await r.json(); btn.disabled = false; if(d.success) { currentThumbUrl = d.url; document.getElementById('thumbRes').classList.remove('hidden'); document.getElementById('fetchedThumb').src = d.url; finishProgressOverlay(); } else { hideProgressOverlay(); showToast(d.error, 'error'); } } catch(e) { btn.disabled = false; hideProgressOverlay(); showToast('خطأ', 'error'); } }
         function downloadThumb() { window.location.href = `/tools/download_thumb_proxy?img_url=${encodeURIComponent(currentThumbUrl)}`; }
 
-        let selId = "", curTitle = "";
-        async function analyzeMain() { const url = document.getElementById('mainUrl').value; if(!url) return showToast('أدخل الرابط', 'error'); document.getElementById('loader').classList.remove('hidden'); document.getElementById('results').classList.add('hidden'); try { const r = await fetch('/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url})}); const d = await r.json(); document.getElementById('loader').classList.add('hidden'); if(d.success) { document.getElementById('results').classList.remove('hidden'); document.getElementById('mainThumb').src = d.thumbnail; document.getElementById('mainTitle').innerText = d.title; curTitle = d.title; const box = document.getElementById('formatsBox'); box.innerHTML = ''; d.formats.forEach(f => { box.innerHTML += `<button onclick="selId='${f.id}'; dl(false)" class="p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-cyan-400 hover:bg-cyan-500/10 font-bold flex justify-between items-center transition-all group"><span class="text-gray-300 group-hover:text-white transition-colors text-lg" dir="ltr">${f.label}</span><span class="bg-black/60 px-4 py-2 rounded-xl text-cyan-400 font-mono shadow-inner border border-white/5">${f.size}</span></button>`; }); showToast('تم التحليل بنجاح', 'success'); } else showToast(d.error, 'error'); } catch(e) { document.getElementById('loader').classList.add('hidden'); showToast('خطأ بالاتصال', 'error'); } }
-        function dl(isA) { window.location.href = `/download?url=${encodeURIComponent(document.getElementById('mainUrl').value)}&format_id=${selId}&is_audio=${isA}`; showToast('بدء التحميل', 'info'); }
+        // ==========================================
+        // 🎛️ نظام القص التفاعلي الذكي
+        // ==========================================
+        function formatVideoTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        const vidPlayer = document.getElementById('previewPlayer');
+        const sStart = document.getElementById('sliderStart');
+        const sEnd = document.getElementById('sliderEnd');
+        const sFill = document.getElementById('sliderFill');
+        const tStart = document.getElementById('actionStartTime');
+        const tEnd = document.getElementById('actionEndTime');
+
+        // قراءة مدة الفيديو عند تحميله
+        vidPlayer.addEventListener('loadedmetadata', () => {
+            const dur = vidPlayer.duration;
+            sStart.max = dur; sEnd.max = dur;
+            sStart.value = 0; sEnd.value = dur;
+            updateSliderUI();
+        });
+
+        // مزامنة الشريط مع وقت الفيديو
+        function updateSlider(type) {
+            let startVal = parseFloat(sStart.value);
+            let endVal = parseFloat(sEnd.value);
+            const minGap = 1; // عدم السماح بقص أقل من ثانية
+
+            if (type === 'start') {
+                if (endVal - startVal <= minGap) { startVal = endVal - minGap; sStart.value = startVal; }
+                vidPlayer.currentTime = startVal;
+            } else {
+                if (endVal - startVal <= minGap) { endVal = startVal + minGap; sEnd.value = endVal; }
+                vidPlayer.currentTime = endVal;
+            }
+            updateSliderUI();
+        }
+
+        function updateSliderUI() {
+            const startVal = parseFloat(sStart.value);
+            const endVal = parseFloat(sEnd.value);
+            const maxVal = parseFloat(sStart.max);
+            
+            const startPercent = (startVal / maxVal) * 100;
+            const endPercent = (endVal / maxVal) * 100;
+            
+            sFill.style.left = `${startPercent}%`;
+            sFill.style.width = `${endPercent - startPercent}%`;
+            
+            tStart.value = formatVideoTime(startVal);
+            tEnd.value = formatVideoTime(endVal);
+        }
+        async function executeViral() {
+    const url = document.getElementById('viralUrl').value;
+    if(!url) return showToast("فين الرابط يا إمبراطور؟", "error");
+}
+async function executeDub() {
+    const url = document.getElementById('dubUrl').value;
+    if(!url) return showToast("فين الرابط يا إمبراطور؟", "error");
+
+    showProgressOverlay("جاري الدبلجة 🎙️", "يتم الآن عزل الصوت، ترجمة الكلام، وتوليد صوت عربي جديد...");
+    
+    try {
+        const response = await fetch('/tools/dub/url', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({url})
+        });
+
+        if(response.ok) {
+            const blob = await response.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = "U2_AI_Dubbed.mp4";
+            a.click();
+            finishProgressOverlay();
+        } else {
+            hideProgressOverlay();
+            showToast("حدث خطأ في الدبلجة", "error");
+        }
+    } catch(e) {
+        hideProgressOverlay();
+        showToast("خطأ في الاتصال", "error");
+    }
+}
+
     </script>
+
+<div id="dubModal" class="modal">
+    <div class="glass-panel modal-content w-full max-w-2xl p-10 text-center relative">
+        <button onclick="closeModals()" class="absolute top-6 left-6 text-gray-500 hover:text-red-500"><i class="fas fa-times"></i></button>
+        <h2 class="text-3xl font-black mb-6 text-cyan-400">المدبلج الذكي</h2>
+        <input type="text" id="dubUrl" placeholder="ألصق رابط الفيديو هنا..." class="pro-input mb-6 text-center">
+        <button onclick="executeDub()" class="w-full py-4 bg-cyan-500 text-black rounded-xl font-black text-xl shadow-lg hover:scale-105 transition-all">بدء الدبلجة فوراً 🎙️</button>
+    </div>
+</div>
+
 </body>
 </html>
